@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Map, Sprout, ShieldAlert, Sparkles, 
   MessageSquareText, Rss, History, BarChart3, CloudSun, 
   CheckSquare, Bell, Settings, ChevronLeft, ChevronRight,
-  Shield, Layers, UserCheck
+  Shield, Layers, UserCheck, ShoppingBag, Users
 } from 'lucide-react';
 
 export type NavTab = 
@@ -16,6 +16,8 @@ export type NavTab =
   | 'vision' 
   | 'advisory' 
   | 'feed' 
+  | 'marketplace'
+  | 'community'
   | 'timeline' 
   | 'analytics' 
   | 'weather' 
@@ -43,8 +45,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { id: 'overview' as NavTab, label: 'Overview', icon: LayoutDashboard },
     { id: 'twin' as NavTab, label: 'Farm Twin', icon: Map },
-    { id: 'crops' as NavTab, label: 'Crops', icon: Sprout },
+    { id: 'crops' as NavTab, label: 'Crops (35+)', icon: Sprout },
     { id: 'livestock' as NavTab, label: 'Livestock', icon: UserCheck },
+    { id: 'marketplace' as NavTab, label: 'Marketplace', icon: ShoppingBag, badge: 'Bargain' },
+    { id: 'community' as NavTab, label: 'Community Hub', icon: Users, badge: 'Live Mandi' },
     { id: 'vision' as NavTab, label: 'AI Vision', icon: Sparkles, badge: 'AI' },
     { id: 'advisory' as NavTab, label: 'Advisory', icon: ShieldAlert, count: unresolvedAdvisoriesCount },
     { id: 'feed' as NavTab, label: 'Farm Feed', icon: Rss },

@@ -266,3 +266,78 @@ export interface AdminAnalytics {
   alertsTriggered: number;
   systemHealthPercent: number;
 }
+
+export type MarketCategory = 'Seeds' | 'Fertilizers' | 'Protection' | 'Machinery' | 'Livestock' | 'Feed';
+
+export interface MarketplaceItem {
+  id: string;
+  title: string;
+  category: MarketCategory;
+  price: number; // in INR ₹
+  originalPrice?: number;
+  unit: string; // e.g. "kg", "bag (50kg)", "liter", "unit"
+  sellerName: string;
+  sellerRating: number; // 4.8
+  sellerLocation: string;
+  imageUrl: string;
+  description: string;
+  inStock: boolean;
+  allowBargain: boolean;
+  minAcceptablePrice?: number;
+  tag?: 'Hybrid' | 'High Yield' | 'Organic' | 'Government Certified' | 'Fast Germination';
+}
+
+export interface BargainOffer {
+  id: string;
+  itemId: string;
+  itemTitle: string;
+  originalPrice: number;
+  offeredPrice: number;
+  status: 'pending' | 'accepted' | 'countered' | 'rejected';
+  counterPrice?: number;
+  messages: { sender: 'user' | 'seller'; text: string; price?: number; timestamp: string }[];
+}
+
+export interface MandiPriceItem {
+  id: string;
+  commodity: string;
+  variety: string;
+  mandiName: string;
+  state: string;
+  minPrice: number;
+  maxPrice: number;
+  modalPrice: number; // ₹ / Quintal
+  trend: 'up' | 'down' | 'stable';
+  changePercent: number;
+  date: string;
+}
+
+export interface TreatmentScheduleItem {
+  id: string;
+  cropName: string;
+  diseaseName: string;
+  activeIngredient: string;
+  brandNames: string[];
+  dosagePerAcre: string; // e.g. "500g in 200L water"
+  applicationMethod: string;
+  sprayingIntervalDays: number;
+  preHarvestIntervalDays: number;
+  safetyLevel: 'Organic Safe' | 'Moderate Precaution' | 'Strict Safety Kit Required';
+}
+
+export interface CommunityPost {
+  id: string;
+  farmerName: string;
+  villageState: string;
+  avatarUrl: string;
+  category: 'Crop Pathology' | 'Live Mandi Price' | 'Organic Farming' | 'Livestock Care' | 'Equipment Share';
+  title: string;
+  content: string;
+  imageUrl?: string;
+  likesCount: number;
+  commentsCount: number;
+  userLiked?: boolean;
+  timestamp: string;
+  verifiedSolution?: boolean;
+}
+

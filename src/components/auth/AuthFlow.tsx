@@ -75,6 +75,9 @@ function maskPhone(phone: string): string {
   return `+91 ${digits.slice(0, 2)}XXXXX${digits.slice(-3)}`;
 }
 
+// ─── Dev bypass flag (set NEXT_PUBLIC_DEV_BYPASS=true in .env.local) ────────
+const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS === 'true';
+
 export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
   const [step, setStep] = useState<'credentials' | 'otp' | 'farm'>('credentials');
 
@@ -155,10 +158,9 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
     });
   }, []);
 
-  // Render reCAPTCHA when on credentials step
+  // Render reCAPTCHA when on credentials step (skip in dev bypass mode)
   useEffect(() => {
-    if (step === 'credentials') {
-      // slight delay so DOM is ready
+    if (step === 'credentials' && !DEV_BYPASS) {
       const timeout = setTimeout(() => initRecaptcha(), 300);
       return () => clearTimeout(timeout);
     }
@@ -177,6 +179,13 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
     const { valid, message } = validateIndianPhone(phoneNumber);
     if (!valid) {
       setPhoneError(message);
+      return;
+    }
+
+    // ── Dev bypass: skip OTP entirely and go straight to farm setup ──────────
+    if (DEV_BYPASS) {
+      setFarmerName(name.trim());
+      setStep('farm');
       return;
     }
 
@@ -201,12 +210,10 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
       setCountdown(60);
       setOtpDigits(['', '', '', '', '', '']);
       setOtpError('');
-      // Focus first OTP box
       setTimeout(() => otpRefs.current[0]?.focus(), 200);
     } catch (err: any) {
       const code = err?.code ?? '';
       setPhoneError(friendlyError(code));
-      // Re-init reCAPTCHA so the user can try again
       initRecaptcha();
     } finally {
       setIsSending(false);
@@ -313,13 +320,11 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
     e.preventDefault();
     setIsSettingUp(true);
 
-    // SECURITY: Only proceed when Firebase has a confirmed, verified user.
-    // Never fall back to a generated ID — that would bypass authentication.
-    const firebaseUser = auth.currentUser;
-    if (!firebaseUser) {
+    // In dev bypass mode use a fixed local UID; in production require a real Firebase user.
+    // auth is null when DEV_BYPASS=true, so never call auth.currentUser in that mode.
+    const firebaseUser = DEV_BYPASS ? null : auth.currentUser;
+    if (!DEV_BYPASS && !firebaseUser) {
       setIsSettingUp(false);
-      // Something went wrong (session lost between OTP confirm and farm setup).
-      // Reset to the beginning so the user re-authenticates properly.
       setOtpError(
         'Authentication session lost. Please verify your phone number again.'
       );
@@ -329,8 +334,10 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
       return;
     }
 
-    const uid = firebaseUser.uid;
-    const verifiedPhone = firebaseUser.phoneNumber ?? `+91${phoneNumber.replace(/\D/g, '')}`;
+    const uid = DEV_BYPASS ? 'dev-user-local' : firebaseUser!.uid;
+    const verifiedPhone = DEV_BYPASS
+      ? `+91${phoneNumber.replace(/\D/g, '')}`
+      : (firebaseUser!.phoneNumber ?? `+91${phoneNumber.replace(/\D/g, '')}`);
 
     const user: UserProfile = {
       id: uid,
@@ -395,8 +402,15 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
                 Verify with Phone OTP
               </h2>
               <p className="text-xs text-[var(--text-muted)]">
-                Enter your name and Indian mobile number. A real SMS OTP will be sent.
+                {DEV_BYPASS
+                  ? 'Dev mode active — enter any name and number to skip OTP.'
+                  : 'Enter your name and Indian mobile number. A real SMS OTP will be sent.'}
               </p>
+              {DEV_BYPASS && (
+                <div className="mt-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-700">
+                  ⚠ DEV MODE — Firebase OTP bypassed. Set NEXT_PUBLIC_DEV_BYPASS=false for production.
+                </div>
+              )}
             </div>
 
             {/* Full Name */}
@@ -457,10 +471,12 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
               </div>
             )}
 
-            {/* reCAPTCHA container */}
-            <div className="flex justify-center">
-              <div id="recaptcha-container" ref={recaptchaContainerRef} />
-            </div>
+            {/* reCAPTCHA container — only rendered when Firebase is active */}
+            {!DEV_BYPASS && (
+              <div className="flex justify-center">
+                <div id="recaptcha-container" ref={recaptchaContainerRef} />
+              </div>
+            )}
 
             <button
               id="send-otp-btn"
@@ -470,10 +486,10 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
             >
               {isSending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
+              ) : DEV_BYPASS ? (
+                <><ArrowRight className="h-4 w-4" /> Continue (Dev Mode)</>
               ) : (
-                <>
-                  Send OTP via SMS <ArrowRight className="h-4 w-4" />
-                </>
+                <>Send OTP via SMS <ArrowRight className="h-4 w-4" /></>
               )}
             </button>
           </form>

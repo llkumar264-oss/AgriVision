@@ -39,10 +39,15 @@ import { TimelineView } from '@/components/timeline/TimelineView';
 import { AnalyticsView } from '@/components/analytics/AnalyticsView';
 import { TasksView } from '@/components/tasks/TasksView';
 import { AlertsView } from '@/components/alerts/AlertsView';
+import { Marketplace } from '@/components/marketplace/Marketplace';
+import { CommunityHub } from '@/components/community/CommunityHub';
 import { FarmerSimpleMode } from '@/components/simple-mode/FarmerSimpleMode';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { DemoModeModal } from '@/components/demo/DemoModeModal';
 import { Loader2 } from 'lucide-react';
+
+// Dev bypass: when NEXT_PUBLIC_DEV_BYPASS=true, Firebase is skipped entirely.
+const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS === 'true';
 
 export default function Home() {
   // ── Auth state (driven by Firebase, not localStorage) ───────────────────
@@ -70,9 +75,16 @@ export default function Home() {
   const [demoOpen, setDemoOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [assistantInitialQuery, setAssistantInitialQuery] = useState('');
+  // Dev mode auth gate (used when NEXT_PUBLIC_DEV_BYPASS=true)
+  const [devAuthenticated, setDevAuthenticated] = useState(false);
 
-  // ── Firebase auth state listener ─────────────────────────────────────────
+  // ── Firebase auth state listener (skipped in dev bypass mode) ───────────────
   useEffect(() => {
+    if (DEV_BYPASS) {
+      // No Firebase calls in dev mode — app starts unauthenticated.
+      setAuthLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       setAuthLoading(false);
@@ -101,7 +113,7 @@ export default function Home() {
 
   // ── Farm data loader ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (!firebaseUser) return;
+    if (!firebaseUser && !devAuthenticated) return;
     const loadData = () => {
       const fList = offlineStorage.getFarms();
       setFarms(fList);
@@ -117,18 +129,18 @@ export default function Home() {
     loadData();
     const unsubscribe = offlineStorage.subscribe(loadData);
     return () => unsubscribe();
-  }, [firebaseUser]);
+  }, [firebaseUser, devAuthenticated]);
 
   // ── Weather ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!firebaseUser) return;
+    if (!firebaseUser && !devAuthenticated) return;
     const activeFarm = farms.find((f) => f.id === activeFarmId);
     fetchFarmWeather(
       activeFarm?.latitude ?? 26.8206,
       activeFarm?.longitude ?? 75.8055,
       activeFarm?.district ?? 'Jaipur'
     ).then(setWeather);
-  }, [activeFarmId, farms, firebaseUser]);
+  }, [activeFarmId, farms, firebaseUser, devAuthenticated]);
 
   const activeFarm = farms.find((f) => f.id === activeFarmId) ?? farms[0] ?? null;
 
@@ -176,22 +188,29 @@ export default function Home() {
     setActiveTab('assistant');
   };
 
-  // ── Logout — uses Firebase signOut ──────────────────────────────────────
+  // ── Logout ──────────────────────────────────────────────────────────
   const handleLogout = async () => {
-    await signOut(auth);
-    // Clear profile (non-auth, non-sensitive) data for this UID
-    if (firebaseUser) {
-      localStorage.removeItem(`agrivision_profile_${firebaseUser.uid}`);
+    if (!DEV_BYPASS) {
+      await signOut(auth);
+      if (firebaseUser) {
+        localStorage.removeItem(`agrivision_profile_${firebaseUser.uid}`);
+      }
+    } else {
+      localStorage.removeItem('agrivision_profile_dev');
+      setDevAuthenticated(false);
     }
     setUserProfile(null);
     setFarms([]);
   };
 
-  // ── Auth callback from AuthFlow ──────────────────────────────────────────
+  // ── Auth callback from AuthFlow ────────────────────────────────────────
   const handleCompleteAuth = (user: UserProfile, farm: Farm) => {
     setUserProfile(user);
-    // Persist non-auth profile (display name, preferences) keyed by Firebase UID
-    if (firebaseUser) {
+    if (DEV_BYPASS) {
+      setDevAuthenticated(true);
+      localStorage.setItem('agrivision_profile_dev', JSON.stringify(user));
+    } else if (firebaseUser) {
+      // Persist non-auth profile (display name, preferences) keyed by Firebase UID
       localStorage.setItem(`agrivision_profile_${firebaseUser.uid}`, JSON.stringify(user));
     }
     offlineStorage.addFarm(farm);
@@ -223,8 +242,8 @@ export default function Home() {
     );
   }
 
-  // ── Not authenticated → Show Auth Flow ────────────────────────────────────
-  if (!firebaseUser) {
+  // ── Not authenticated → Show Auth Flow ───────────────────────────────────
+  if (!firebaseUser && !(DEV_BYPASS && devAuthenticated)) {
     return <AuthFlow onCompleteAuth={handleCompleteAuth} />;
   }
 
@@ -365,6 +384,14 @@ export default function Home() {
             <FarmFeed onAddTask={handleAddTask} onOpenAssistant={handleOpenAssistant} />
           )}
 
+          {activeTab === 'marketplace' && (
+            <Marketplace onOpenAssistant={handleOpenAssistant} />
+          )}
+
+          {activeTab === 'community' && (
+            <CommunityHub onOpenAssistant={handleOpenAssistant} />
+          )}
+
           {activeTab === 'timeline' && <TimelineView timeline={timeline} />}
           {activeTab === 'analytics' && <AnalyticsView />}
           {activeTab === 'weather' && weather && <WeatherCard weather={weather} />}
@@ -395,7 +422,9 @@ export default function Home() {
                 </div>
                 <div className="flex justify-between border-b border-[var(--border-subtle)] pb-2">
                   <span className="text-[var(--text-muted)]">Firebase UID</span>
-                  <span className="font-mono text-[10px] text-[var(--text-muted)] truncate max-w-[180px]">{firebaseUser?.uid}</span>
+                  <span className="font-mono text-[10px] text-[var(--text-muted)] truncate max-w-[180px]">
+                  {DEV_BYPASS ? 'DEV-MODE (no Firebase)' : (firebaseUser?.uid ?? 'N/A')}
+                </span>
                 </div>
                 <div className="flex justify-between border-b border-[var(--border-subtle)] pb-2">
                   <span className="text-[var(--text-muted)]">Active Farm</span>
