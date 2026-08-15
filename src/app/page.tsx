@@ -380,10 +380,6 @@ export default function Home() {
             <AdvisoryCenter advisories={advisories} onAddTask={handleAddTask} onOpenAssistant={handleOpenAssistant} />
           )}
 
-          {activeTab === 'feed' && (
-            <FarmFeed onAddTask={handleAddTask} onOpenAssistant={handleOpenAssistant} />
-          )}
-
           {activeTab === 'marketplace' && (
             <Marketplace onOpenAssistant={handleOpenAssistant} />
           )}

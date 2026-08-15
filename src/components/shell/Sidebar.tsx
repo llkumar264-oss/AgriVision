@@ -15,7 +15,6 @@ export type NavTab =
   | 'livestock' 
   | 'vision' 
   | 'advisory' 
-  | 'feed' 
   | 'marketplace'
   | 'community'
   | 'timeline' 
@@ -46,12 +45,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'overview' as NavTab, label: 'Overview', icon: LayoutDashboard },
     { id: 'twin' as NavTab, label: 'Farm Twin', icon: Map },
     { id: 'crops' as NavTab, label: 'Crops (35+)', icon: Sprout },
-    { id: 'livestock' as NavTab, label: 'Livestock', icon: UserCheck },
+    { id: 'livestock' as NavTab, label: 'Livestock (USP)', icon: UserCheck, badge: 'Flagship' },
     { id: 'marketplace' as NavTab, label: 'Marketplace', icon: ShoppingBag, badge: 'Bargain' },
     { id: 'community' as NavTab, label: 'Community Hub', icon: Users, badge: 'Live Mandi' },
     { id: 'vision' as NavTab, label: 'AI Vision', icon: Sparkles, badge: 'AI' },
     { id: 'advisory' as NavTab, label: 'Advisory', icon: ShieldAlert, count: unresolvedAdvisoriesCount },
-    { id: 'feed' as NavTab, label: 'Farm Feed', icon: Rss },
     { id: 'timeline' as NavTab, label: 'Timeline', icon: History },
     { id: 'analytics' as NavTab, label: 'Analytics', icon: BarChart3 },
     { id: 'weather' as NavTab, label: 'Weather', icon: CloudSun },
