@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Mic, Volume2, Sparkles, Sprout, ShieldAlert, ArrowLeft, 
-  Send, Globe, CheckCircle2, MessageSquareText, Camera, PhoneCall, Loader2
+  Mic, MicOff, Volume2, VolumeX, Sparkles, Sprout, ShieldAlert, ArrowLeft, 
+  Send, Globe, CheckCircle2, MessageSquareText, Camera, PhoneCall, Loader2,
+  HelpCircle, RefreshCw, Zap, TrendingUp
 } from 'lucide-react';
 import { CropItem, AdvisoryItem } from '@/types/schema';
 
@@ -14,21 +15,67 @@ interface FarmerSimpleModeProps {
 }
 
 export const LANGUAGES = [
-  { code: 'hi', speechLang: 'hi-IN', name: 'हिंदी (Hindi)', greeting: 'नमस्ते! मैं आपका एग्रीविज़न एआई सहायक हूँ। आज मैं आपकी फसल या पशुओं के लिए क्या सहायता कर सकता हूँ?' },
-  { code: 'en', speechLang: 'en-IN', name: 'English', greeting: 'Hello! I am your AgriVision AI Assistant. How can I help your crops or livestock today?' },
-  { code: 'pb', speechLang: 'pa-IN', name: 'ਪੰਜਾਬੀ (Punjabi)', greeting: 'ਸਤਿ ਸ਼੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡਾ ਐਗਰੀਵਿਜ਼ਨ ਏਆਈ ਸਹਾਇਕ ਹਾਂ। ਅੱਜ ਮੈਂ ਤੁਹਾਡੀ ਕੀ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?' },
-  { code: 'mr', speechLang: 'mr-IN', name: 'मराठी (Marathi)', greeting: 'नमस्कार! मी तुमचा ॲग्रीव्हिजन AI सहाय्यक आहे. आज मी तुम्हाला कशी मदत करू शकतो?' },
-  { code: 'gu', speechLang: 'gu-IN', name: 'ગુજરાતી (Gujarati)', greeting: 'નમસ્તે! હું તમારો એગ્રીવિઝન AI સહાયક છું. આજે હું તમારી શું મદદ કરી શકું?' },
-  { code: 'te', speechLang: 'te-IN', name: 'తెలుగు (Telugu)', greeting: 'నమస్కారం! నేను మీ అగ్రివిజన్ AI అసిస్టెంట్‌ని. ఈరోజు నేను మీకు ఎలా సహాయపడగలను?' },
-  { code: 'ta', speechLang: 'ta-IN', name: 'தமிழ் (Tamil)', greeting: 'வணக்கம்! நான் உங்கள் அக்ரிவிஷன் AI உதவியாளர். இன்று உங்களுக்கு எப்படி உதவ முடியும்?' },
-  { code: 'kn', speechLang: 'kn-IN', name: '<ctrl42>ಕರ್ನಾಟಕ (Kannada)', greeting: 'ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ಅಗ್ರಿವಿಷನ್ AI ಸಹಾಯಕ. ಇಂದು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?' },
-  { code: 'bn', speechLang: 'bn-IN', name: 'বাংলা (Bengali)', greeting: 'নমস্কার! আমি আপনার এগ্রিভিশন AI সহকারী। আজ আপনাকে কীভাবে সাহায্য করতে পারি?' },
-  { code: 'or', speechLang: 'or-IN', name: 'ଓଡ଼ିଆ (Odia)', greeting: 'ନମସ୍କାର! ମୁଁ ଆପଣଙ୍କର ଏଗ୍ରିଭିଜନ୍ AI ସହାୟକ | ଆଜି ମୁଁ ଆପଣଙ୍କୁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?' },
-  { code: 'ml', speechLang: 'ml-IN', name: 'മലയാളം (Malayalam)', greeting: 'നമസ്കാരം! ഞാൻ നിങ്ങളുടെ അഗ്രിവിഷൻ AI അസിസ്റ്റന്റാണ്. ഇന്ന് നിങ്ങളെ എങ്ങനെ സഹായിക്കും?' },
-  { code: 'ur', speechLang: 'ur-IN', name: 'اردو (Urdu)', greeting: 'السلام علیکم! میں آپ کا ایگری ویژن AI معاون ہوں۔ آج میں آپ کی کیا مدد کر سکتا ہوں؟' },
-  { code: 'as', speechLang: 'as-IN', name: 'অসমীয়া (Assamese)', greeting: 'নমস্কাৰ! মই আপোনাৰ এগ্ৰিভিছন AI সহায়ক। আজি আপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ?' },
-  { code: 'es', speechLang: 'es-ES', name: 'Español (Spanish)', greeting: '¡Hola! Soy tu asistente IA de AgriVision. ¿Cómo puedo ayudarte hoy con tus cultivos o ganado?' },
-  { code: 'fr', speechLang: 'fr-FR', name: 'Français (French)', greeting: 'Bonjour! Je suis votre assistant IA AgriVision. Comment puis-je vous aider aujourd\'hui?' },
+  { code: 'hi', speechLang: 'hi-IN', name: 'हिंदी (Hindi)', greeting: 'नमस्ते किसान भाई! 🙏 मैं AgriVision ऑल-राउंडर AI सहायक हूँ। आप गेहूँ रतुआ (Rust), धान, टमाटर, सरसों, कपास, गाय-भैंस का दूध बढ़ाने, जीवामृत या आज के मंडी भाव के बारे में कोई भी सवाल पूछ सकते हैं।' },
+  { code: 'en', speechLang: 'en-IN', name: 'English', greeting: 'Hello Farmer! 🙏 I am your AgriVision All-Rounder AI Assistant. You can ask any question regarding crops, livestock, disease cures, Jeevamrut formulas, or live mandi prices.' },
+  { code: 'pb', speechLang: 'pa-IN', name: 'ਪੰਜਾਬੀ (Punjabi)', greeting: 'ਸਤਿ ਸ਼੍ਰੀ ਅਕਾਲ ਕਿਸਾਨ ਵੀਰੋ! 🙏 ਮੈਂ ਐਗਰੀਵਿਜ਼ਨ ਆਲ-ਰਾਊਂਡਰ ਏਆਈ ਸਹਾਇਕ ਹਾਂ। ਤੁਸੀਂ ਕਣਕ, ਝੋਨਾ, ਪਸ਼ੂ ਪਾਲਣ ਜਾਂ ਮੰਡੀ ਦੇ ਭਾਅ ਬਾਰੇ ਕੋਈ ਵੀ ਸਵਾਲ ਪੁੱਛ ਸਕਦੇ ਹੋ।' },
+  { code: 'mr', speechLang: 'mr-IN', name: 'मराठी (Marathi)', greeting: 'नमस्कार शेतकरी बंधूंनो! 🙏 मी तुमचा ॲग्रीव्हिजन ऑल-राउंडर AI सहाय्यक आहे. तुम्ही पिके, कीटकनाशके, पशुसंवर्धन किंवा बाजारभावाबाबत कोणताही प्रश्न विचारू शकता.' },
+  { code: 'gu', speechLang: 'gu-IN', name: 'ગુજરાતી (Gujarati)', greeting: 'નમસ્તે ખેડૂત મિત્રો! 🙏 હું તમારો એગ્રીવિઝન ઓલ-રાઉન્ડર AI સહાયક છું. તમે પાક, ખાતર, પશુપાલન અથવા આજના બજાર ભાવ વિશે કંઈપણ પૂછી શકો છો.' },
+  { code: 'te', speechLang: 'te-IN', name: 'తెలుగు (Telugu)', greeting: 'రైతు సోదరులకు నమస్కారం! 🙏 నేను మీ అగ్రివిజన్ ఆల్-రౌండర్ AI అసిస్టెంట్‌ని. పంటలు, ఎరువులు, పాడి లేదా మార్కెట్ ధరల గురించి ఏ ప్రశ్నైనా అడగవచ్చు.' },
+  { code: 'ta', speechLang: 'ta-IN', name: 'தமிழ் (Tamil)', greeting: 'வணக்கம் விவசாய தோழரே! 🙏 நான் உங்கள் அக்ரிவிஷன் AI உதவியாளர். பயிர்கள், கால்நடை பராமரிப்பு அல்லது மண்டி விலைகள் பற்றி எந்த கேள்வியும் கேட்கலாம்.' },
+  { code: 'kn', speechLang: 'kn-IN', name: 'ಕನ್ನಡ (Kannada)', greeting: 'ನಮಸ್ಕಾರ ರೈತ ಬಾಂಧವರೇ! 🙏 ನಾನು ನಿಮ್ಮ ಅಗ್ರಿವಿಷನ್ ಆಲ್-ರೌಂಡರ್ AI ಸಹಾಯಕ. ಬೆಳೆಗಳು, ರೋಗಗಳ ನಿವಾರಣೆ ಅಥವಾ ಮಾರುಕಟ್ಟೆ ದರಗಳ ಬಗ್ಗೆ ಕೇಳಿ.' },
+  { code: 'bn', speechLang: 'bn-IN', name: 'বাংলা (Bengali)', greeting: 'নমস্কার কৃষক ভাই! 🙏 আমি আপনার এগ্রিভিশন অল-রাউন্ডার AI সহকারী। ফসল, রোগবালাই, গবাদিপশু বা আজকের বাজারদর সম্পর্কে যেকোনো প্রশ্ন করুন।' },
+];
+
+const COMPREHENSIVE_QUICK_CHIPS = [
+  {
+    category: '🌾 Fasal & Rog',
+    hi: 'गेहूँ में पीला व भूरा रतुआ (Rust) का सबसे पक्का इलाज क्या है?',
+    en: 'What is the best cure for Wheat Leaf & Stem Rust?',
+    labelHi: 'गेहूँ रतुआ (Rust) उपचार',
+    labelEn: 'Wheat Rust Cure',
+  },
+  {
+    category: '🐄 Pashupalan',
+    hi: 'मुर्रा भैंस का दूध और फैट (Fat %) बढ़ाने के लिए क्या खिलाएं?',
+    en: 'Best feed formula to increase buffalo milk yield and fat percentage?',
+    labelHi: 'भैंस दूध व फैट % बढ़ाएं',
+    labelEn: 'Buffalo Milk & Fat Boost',
+  },
+  {
+    category: '🧪 Jaivik Khad',
+    hi: '1 एकड़ खेत के लिए असली जीवामृत और दशपर्णी अर्क बनाने का फार्मूला क्या है?',
+    en: 'How to make authentic Jeevamrut bio-fertilizer for 1 acre?',
+    labelHi: '1 एकड़ जीवामृत फार्मूला',
+    labelEn: '1-Acre Jeevamrut Recipe',
+  },
+  {
+    category: '📈 Live Mandi',
+    hi: 'आज जयपुर, खन्ना और इंदौर मंडी में गेहूँ, बासमती और सरसों का ताज़ा भाव क्या है?',
+    en: 'What are today mandi commodity prices in Jaipur and Khanna?',
+    labelHi: 'आज का लाइव मंडी भाव',
+    labelEn: 'Live Mandi Prices',
+  },
+  {
+    category: '🍅 Sabziyan',
+    hi: 'टमाटर में अर्ली ब्लाइट और मिर्च में पत्ती मरोड़ रोग का तुरंत स्प्रे क्या करें?',
+    en: 'Immediate spray for Tomato Early Blight and Chilli Leaf Curl?',
+    labelHi: 'टमाटर व मिर्च स्प्रे',
+    labelEn: 'Tomato & Chilli Spray',
+  },
+  {
+    category: '💧 Sinchai & NPK',
+    hi: 'फसल में यूरिया और एनपीके 19:19:19 देने का सबसे सही समय और मात्रा क्या है?',
+    en: 'Best time and dosage for Urea and NPK 19:19:19 application?',
+    labelHi: 'यूरिया व NPK सही समय',
+    labelEn: 'NPK Fertilizer Guide',
+  },
+  {
+    category: '🏛️ Sarkari Yojna',
+    hi: 'पीएम-किसान सम्मान निधि और किसान क्रेडिट कार्ड (KCC) का लाभ कैसे लें?',
+    en: 'How to avail PM-Kisan Samman Nidhi and KCC scheme benefits?',
+    labelHi: 'PM किसान व KCC लोन',
+    labelEn: 'Govt Schemes & Subsidy',
+  },
 ];
 
 export const FarmerSimpleMode: React.FC<FarmerSimpleModeProps> = ({
@@ -42,23 +89,44 @@ export const FarmerSimpleMode: React.FC<FarmerSimpleModeProps> = ({
   ]);
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   useEffect(() => {
-    // Speak greeting on initial mount / lang change
-    speakText(selectedLang.greeting, selectedLang.speechLang);
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  useEffect(() => {
+    // Speak greeting on initial mount / lang change if voice enabled
+    if (voiceEnabled) {
+      speakText(selectedLang.greeting, selectedLang.speechLang);
+    }
   }, [selectedLang]);
 
   const speakText = (text: string, langCode: string) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window) || !voiceEnabled) return;
     try {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
+      const cleanText = text.replace(/[*#•_]/g, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = langCode;
-      utterance.rate = 0.95;
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const matchVoice = voices.find((v) => v.lang.includes(langCode.split('-')[0]) || v.lang.includes('IN'));
+      if (matchVoice) {
+        utterance.voice = matchVoice;
+      }
+
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
@@ -80,22 +148,26 @@ export const FarmerSimpleMode: React.FC<FarmerSimpleModeProps> = ({
     const query = textToSend || inputText;
     if (!query.trim() || isLoading) return;
 
-    const newMsgs = [
-      ...messages,
-      { role: 'user' as const, text: query }
-    ];
+    const userMsg = { role: 'user' as const, text: query };
+    const newMsgs = [...messages, userMsg];
 
     setMessages(newMsgs);
     setInputText('');
     setIsLoading(true);
 
     try {
-      // Real API Call to Gemini LLM Chat endpoint
+      // Build conversation history for multi-turn conversational AI
+      const conversationHistory = newMsgs.map((m) => ({
+        role: m.role,
+        content: m.text,
+      }));
+
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query,
+          conversationHistory,
           farmContext: {
             farmName: 'Rajasthan Green Fields',
             crops: crops.map(c => ({ name: c.name, healthScore: c.healthScore, activeCondition: c.activeCondition })),
@@ -110,14 +182,18 @@ export const FarmerSimpleMode: React.FC<FarmerSimpleModeProps> = ({
       const aiReply = data?.message?.text || data?.message || 'आपकी फसल के लिए सलाह: कॉपर फफूंदनाशक 2.5g/L पानी में मिलाकर स्प्रे करें।';
 
       setMessages(prev => [...prev, { role: 'assistant', text: aiReply }]);
-      speakText(aiReply, selectedLang.speechLang);
+      if (voiceEnabled) {
+        speakText(aiReply, selectedLang.speechLang);
+      }
     } catch (err) {
       const fallbackReply = selectedLang.code === 'hi'
-        ? `सलाह: ${query} के लिए 250 ग्राम कॉपर ऑक्सीक्लोराइड 200 लीटर पानी में मिलाकर सुबह 8-10 बजे छिड़कें।`
-        : `Advice for "${query}": Apply 250g Copper Oxychloride in 200L water during early morning.`;
+        ? `सलाह: ${query} के लिए 250 ग्राम कॉपर ऑक्सीक्लोराइड या प्रोपिकोनाजोल 1ml/L पानी में मिलाकर सुबह 8-10 बजे छिड़कें।`
+        : `Advice for "${query}": Apply Propiconazole 25% EC @ 1ml/L in 200L water during early morning.`;
 
       setMessages(prev => [...prev, { role: 'assistant', text: fallbackReply }]);
-      speakText(fallbackReply, selectedLang.speechLang);
+      if (voiceEnabled) {
+        speakText(fallbackReply, selectedLang.speechLang);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -129,15 +205,7 @@ export const FarmerSimpleMode: React.FC<FarmerSimpleModeProps> = ({
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      // Web speech API not supported in current browser — fallback prompt
-      setIsListening(true);
-      setTimeout(() => {
-        setIsListening(false);
-        const prompt = selectedLang.code === 'hi'
-          ? 'टमाटर के पत्तों पर काले धब्बे हैं, क्या दवा छिड़कें?'
-          : 'Yellow spots on wheat leaves, what treatment to apply?';
-        handleSendMessage(prompt);
-      }, 2500);
+      alert('Voice recognition not supported in this browser. Please use Chrome or Edge.');
       return;
     }
 
@@ -171,54 +239,81 @@ export const FarmerSimpleMode: React.FC<FarmerSimpleModeProps> = ({
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col font-sans p-4 sm:p-6 animate-fade-in">
-      {/* Top Header */}
+      
+      {/* ── HEADER ───────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-4 mb-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onExit}
-            className="flex items-center gap-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-2 text-xs font-bold text-[var(--text-main)] hover:bg-[var(--surface-hover)]"
+            className="flex items-center gap-1.5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 py-2.5 text-xs font-black text-[var(--text-main)] hover:bg-[var(--surface-hover)] shadow-xs transition"
           >
             <ArrowLeft className="h-4 w-4" /> Exit Simple Mode
           </button>
           <div>
-            <h1 className="text-base font-extrabold text-[var(--text-main)]">AgriVision Real Voice &amp; LLM Kisan Guide</h1>
-            <span className="text-[10px] font-semibold text-emerald-700">Live Gemini LLM + Web Speech API Engine</span>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-black text-[var(--text-main)]">AgriVision All-Rounder Voice AI</h1>
+              <span className="rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 px-2 py-0.5 text-[9px] font-black uppercase">
+                Gemini Multi-Turn Engine
+              </span>
+            </div>
+            <p className="text-[11px] text-[var(--text-muted)]">Instant human-like voice advice across all agriculture domains</p>
           </div>
         </div>
 
-        {/* 15+ Languages Selector */}
         <div className="flex items-center gap-2">
-          <Globe className="h-4 w-4 text-emerald-600 shrink-0" />
-          <select
-            value={selectedLang.code}
-            onChange={(e) => handleLanguageChange(e.target.value)}
-            className="rounded-xl border-2 border-emerald-500 bg-[var(--surface-card)] px-3 py-1.5 text-xs font-extrabold text-emerald-900 shadow-xs focus:outline-none"
+          {/* Voice Readout Toggle */}
+          <button
+            onClick={() => {
+              const newVal = !voiceEnabled;
+              setVoiceEnabled(newVal);
+              if (!newVal && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+              }
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition border ${
+              voiceEnabled
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-muted)]'
+            }`}
           >
-            {LANGUAGES.map((lang) => (
-              <option key={lang.code} value={lang.code}>
-                {lang.name}
-              </option>
-            ))}
-          </select>
+            {voiceEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{voiceEnabled ? 'Voice ON' : 'Voice Muted'}</span>
+          </button>
+
+          {/* 15+ Languages Selector */}
+          <div className="flex items-center gap-1.5 bg-[var(--surface-card)] border border-[var(--border-subtle)] p-1 rounded-xl shadow-xs">
+            <Globe className="h-4 w-4 text-emerald-600 ml-1 shrink-0" />
+            <select
+              value={selectedLang.code}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="bg-transparent pr-2 py-1 text-xs font-extrabold text-[var(--text-main)] focus:outline-none cursor-pointer"
+            >
+              {LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Voice Status Indicator */}
+      {/* ── VOICE STATUS INDICATOR ────────────────────────────────────────── */}
       {isSpeaking && (
-        <div className="mb-3 flex items-center justify-center gap-2 rounded-xl bg-emerald-100 border border-emerald-300 p-2.5 text-xs font-bold text-emerald-900 animate-pulse">
+        <div className="mb-3 flex items-center justify-center gap-2 rounded-2xl bg-emerald-100 border border-emerald-300 p-2.5 text-xs font-black text-emerald-900 animate-pulse">
           <Volume2 className="h-4 w-4 text-emerald-700 animate-bounce" />
-          <span>AgriVision Audio Voice Output ({selectedLang.name})...</span>
+          <span>AgriVision Speaking Aloud in {selectedLang.name}...</span>
         </div>
       )}
 
       {isListening && (
-        <div className="mb-3 flex items-center justify-center gap-2 rounded-xl bg-red-100 border border-red-300 p-2.5 text-xs font-bold text-red-900 animate-pulse">
+        <div className="mb-3 flex items-center justify-center gap-2 rounded-2xl bg-red-100 border border-red-300 p-2.5 text-xs font-black text-red-900 animate-pulse">
           <Mic className="h-4 w-4 text-red-700 animate-ping" />
-          <span>Listening to your voice input in {selectedLang.name}... Speak now!</span>
+          <span>Listening in {selectedLang.name}... Speak your farming question now!</span>
         </div>
       )}
 
-      {/* Chat Messages Log */}
+      {/* ── CHAT MESSAGES SCROLL VIEW ─────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto space-y-4 rounded-3xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-xs mb-4 min-h-[380px] max-h-[520px]">
         {messages.map((msg, idx) => (
           <div
@@ -226,77 +321,83 @@ export const FarmerSimpleMode: React.FC<FarmerSimpleModeProps> = ({
             className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
           >
             <div
-              className={`max-w-[85%] sm:max-w-[75%] rounded-3xl p-4 text-sm font-semibold leading-relaxed shadow-xs ${
+              className={`max-w-[88%] sm:max-w-[78%] rounded-3xl p-4 text-sm font-medium leading-relaxed shadow-xs ${
                 msg.role === 'user'
                   ? 'bg-[var(--primary-agri)] text-white rounded-br-none'
-                  : 'bg-emerald-50/80 border border-emerald-200 text-emerald-950 rounded-bl-none'
+                  : 'bg-emerald-500/10 border border-emerald-500/20 text-[var(--text-main)] rounded-bl-none whitespace-pre-line'
               }`}
             >
               {msg.role === 'assistant' && (
-                <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-800 mb-1.5 pb-1 border-b border-emerald-200/60">
-                  <Sparkles className="h-4 w-4 text-emerald-600" /> AgriVision Real-Time LLM Advisor ({selectedLang.name})
+                <div className="flex items-center justify-between text-xs font-extrabold text-emerald-700 dark:text-emerald-300 mb-2 pb-1.5 border-b border-emerald-500/20">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-emerald-600" /> AgriVision All-Rounder AI ({selectedLang.name})
+                  </span>
+                  <button
+                    onClick={() => speakText(msg.text, selectedLang.speechLang)}
+                    className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 hover:underline"
+                  >
+                    <Volume2 className="h-3.5 w-3.5" /> Re-play Voice
+                  </button>
                 </div>
               )}
               <p>{msg.text}</p>
             </div>
           </div>
         ))}
+
         {isLoading && (
-          <div className="flex items-center gap-2 text-xs font-bold text-[var(--primary-agri)] p-2">
-            <Loader2 className="h-4 w-4 animate-spin" /> Thinking &amp; consulting agricultural LLM model...
+          <div className="flex items-center gap-2 text-xs font-bold text-[var(--primary-agri)] p-3 rounded-2xl bg-[var(--bg-app)] border border-[var(--border-subtle)] w-fit animate-pulse">
+            <Loader2 className="h-4 w-4 animate-spin" /> AgriVision AI is formulating comprehensive agricultural answer...
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Audio Prompt Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3">
-        <button
-          onClick={() => handleSendMessage(selectedLang.code === 'hi' ? 'गेहूँ की फसल में पीले पत्ते क्यों पड़ रहे हैं?' : 'Why are wheat leaves turning yellow?')}
-          className="rounded-full bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 text-xs font-bold text-emerald-800 whitespace-nowrap hover:bg-emerald-100 transition"
-        >
-          🌱 {selectedLang.code === 'hi' ? 'गेहूँ पीलापन उपचार' : 'Wheat Yellow Leaf Fix'}
-        </button>
-
-        <button
-          onClick={() => handleSendMessage(selectedLang.code === 'hi' ? 'गाय और भैंस का दूध बढ़ाने का क्या आहार है?' : 'Best feed formula to increase milk yield?')}
-          className="rounded-full bg-amber-50 border border-amber-200 px-3.5 py-1.5 text-xs font-bold text-amber-800 whitespace-nowrap hover:bg-amber-100 transition"
-        >
-          🐄 {selectedLang.code === 'hi' ? 'पशु दूध आहार' : 'Cattle Milk Feed Formula'}
-        </button>
-
-        <button
-          onClick={() => handleSendMessage(selectedLang.code === 'hi' ? 'आज का जयपुर मंडी में बासमती चावल का भाव?' : 'Today Basmati Rice mandi rate?')}
-          className="rounded-full bg-blue-50 border border-blue-200 px-3.5 py-1.5 text-xs font-bold text-blue-800 whitespace-nowrap hover:bg-blue-100 transition"
-        >
-          💰 {selectedLang.code === 'hi' ? 'लाइव मंडी भाव' : 'Live Mandi Price'}
-        </button>
+      {/* ── EXPANDED ALL-ROUNDER QUICK TOPIC CHIPS ────────────────────────── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
+        <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider shrink-0">
+          Topics:
+        </span>
+        {COMPREHENSIVE_QUICK_CHIPS.map((chip, i) => {
+          const queryText = selectedLang.code === 'en' ? chip.en : chip.hi;
+          const labelText = selectedLang.code === 'en' ? chip.labelEn : chip.labelHi;
+          return (
+            <button
+              key={i}
+              onClick={() => handleSendMessage(queryText)}
+              className="shrink-0 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3.5 py-1.5 text-xs font-bold text-[var(--text-main)] hover:border-[var(--primary-agri)] hover:text-[var(--primary-agri)] shadow-2xs transition whitespace-nowrap"
+            >
+              {labelText}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Audio Mic & Input Bar */}
+      {/* ── AUDIO MIC & INPUT BAR ─────────────────────────────────────────── */}
       <div className="flex items-center gap-3">
         <button
           onClick={startVoiceRecognition}
-          className={`flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg transition transform active:scale-95 ${
+          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg transition transform active:scale-95 ${
             isListening ? 'bg-red-600 animate-ping' : 'bg-emerald-600 hover:bg-emerald-700'
           }`}
           title="Tap to speak in your language"
         >
-          <Mic className="h-6 w-6" />
+          {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
         </button>
 
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder={selectedLang.code === 'hi' ? 'यहाँ बोलें या टाइप करें (उदा. टमाटर की बीमारी...)' : 'Speak or type query here...'}
+            placeholder={selectedLang.code === 'hi' ? 'यहाँ बोलें या कोई भी सवाल टाइप करें (उदा. गेहूँ रतुआ, भैंस का दूध, जीवामृत, मंडी भाव...)' : 'Speak or type any farming question...'}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-            className="w-full rounded-2xl border-2 border-emerald-300 bg-[var(--surface-card)] pl-4 pr-12 py-3 text-sm font-semibold text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+            className="w-full rounded-2xl border-2 border-emerald-500/40 bg-[var(--surface-card)] pl-4 pr-12 py-3 text-sm font-bold text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)] shadow-xs"
           />
           <button
             onClick={() => handleSendMessage()}
-            disabled={isLoading}
-            className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--primary-agri)] text-white shadow-xs hover:bg-[var(--primary-agri-hover)] transition"
+            disabled={isLoading || !inputText.trim()}
+            className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--primary-agri)] text-white shadow-xs hover:bg-[var(--primary-agri-hover)] transition disabled:opacity-40"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>

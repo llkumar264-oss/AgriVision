@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { CommunityPost, MandiPriceItem } from '@/types/schema';
 import { INITIAL_COMMUNITY_POSTS, INITIAL_MANDI_PRICES } from '@/lib/mock-data';
+import { AgriImage } from '@/components/ui/AgriImage';
 
 interface CommunityHubProps {
   onOpenAssistant?: (query: string) => void;
@@ -161,7 +162,12 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAssistant }) =
               <p className="text-xs text-[var(--text-main)]/90 leading-relaxed">{post.content}</p>
               {post.imageUrl && (
                 <div className="h-56 w-full rounded-xl overflow-hidden bg-[var(--bg-app)]">
-                  <img src={post.imageUrl} alt={post.title} className="h-full w-full object-cover" />
+                  <AgriImage
+                    src={post.imageUrl}
+                    alt={post.title}
+                    fallbackType="crop"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
               )}
             </div>

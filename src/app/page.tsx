@@ -193,6 +193,43 @@ export default function Home() {
     setActiveTab('assistant');
   };
 
+  // ── Update Farmer & Farm Profile ──────────────────────────────────────
+  const handleUpdateProfile = (updatedUser: Partial<UserProfile>, updatedFarm?: Partial<Farm>) => {
+    if (userProfile) {
+      const newUser = { ...userProfile, ...updatedUser };
+      setUserProfile(newUser);
+      if (DEV_BYPASS) {
+        localStorage.setItem('agrivision_profile_dev', JSON.stringify(newUser));
+      } else if (firebaseUser) {
+        localStorage.setItem(`agrivision_profile_${firebaseUser.uid}`, JSON.stringify(newUser));
+      }
+    } else {
+      const newUser: UserProfile = {
+        id: firebaseUser?.uid || 'dev-user',
+        name: updatedUser.name || 'Farmer',
+        phone: updatedUser.phone || '+91 98765 43210',
+        language: 'hi',
+        role: 'owner',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        ...updatedUser,
+      };
+      setUserProfile(newUser);
+      if (DEV_BYPASS) {
+        localStorage.setItem('agrivision_profile_dev', JSON.stringify(newUser));
+      } else if (firebaseUser) {
+        localStorage.setItem(`agrivision_profile_${firebaseUser.uid}`, JSON.stringify(newUser));
+      }
+    }
+
+    if (updatedFarm && activeFarm) {
+      const newFarm = { ...activeFarm, ...updatedFarm };
+      const newFarmsList = farms.map((f) => (f.id === activeFarm.id ? newFarm : f));
+      setFarms(newFarmsList);
+      offlineStorage.updateFarm(newFarm);
+    }
+  };
+
   // ── Logout ──────────────────────────────────────────────────────────
   const handleLogout = async () => {
     if (!DEV_BYPASS) {
@@ -286,6 +323,8 @@ export default function Home() {
         <Header
           activeFarm={activeFarm}
           farms={farms}
+          userProfile={userProfile}
+          onUpdateProfile={handleUpdateProfile}
           onSelectFarm={handleSelectFarm}
           onOpenSearch={() => setSearchOpen(true)}
           onToggleSimpleMode={() => setIsSimpleMode(true)}
@@ -295,6 +334,7 @@ export default function Home() {
           onToggleDarkMode={handleToggleDarkMode}
           unreadAlertsCount={alerts.filter((a) => !a.read).length}
           onOpenNotifications={() => setActiveTab('alerts')}
+          onSignOut={handleLogout}
         />
 
         {/* Dynamic Main View Area */}
@@ -336,7 +376,7 @@ export default function Home() {
                   {weather && <WeatherCard weather={weather} />}
                 </div>
                 <div className="md:col-span-12">
-                  <FarmTwin fields={activeFields} />
+                  <FarmTwin fields={activeFields} onOpenAssistant={handleOpenAssistant} />
                 </div>
                 <div className="md:col-span-7">
                   <AdvisoryCenter advisories={advisories} onAddTask={handleAddTask} onOpenAssistant={handleOpenAssistant} />
@@ -348,7 +388,7 @@ export default function Home() {
             </div>
           )}
 
-          {activeTab === 'twin' && <FarmTwin fields={activeFields} />}
+          {activeTab === 'twin' && <FarmTwin fields={activeFields} onOpenAssistant={handleOpenAssistant} />}
 
           {activeTab === 'crops' && (
             <CropManagement crops={crops} onAddCrop={(c) => offlineStorage.addCrop(c)} onOpenAssistant={handleOpenAssistant} />

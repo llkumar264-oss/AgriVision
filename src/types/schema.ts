@@ -63,6 +63,73 @@ export interface CropItem {
   lastScanDate: string;
   activeCondition?: string;
   imageUrl?: string;
+  // Extended Agronomic & Botanical Data
+  category?: 'Grains' | 'Vegetables' | 'Oilseeds' | 'Pulses' | 'Fruits' | 'Spices';
+  climate?: string; // e.g. "20°C - 30°C, Warm & Semi-arid"
+  soilPh?: string; // e.g. "6.0 - 7.5 Sandy Loam"
+  waterRequirement?: string; // e.g. "400 - 600 mm, Drip Irrigation Recommended"
+  npkRatio?: string; // e.g. "120:60:60 kg/ha"
+  pestThreats?: Array<{ pestName: string; symptoms: string; treatment: string }>;
+  maturityIndicators?: string[]; // e.g. "Deep red color coverage >90%", "Fruit firmness 15-18 N", "Soluble solids >5.5° Brix"
+  daysToMaturity?: number;
+  harvestWindowDays?: number;
+}
+
+export type MaturityStage = 'Harvest-Ready' | 'Mid Ripening' | 'Turning / Breaker' | 'Green Immature' | 'Overripe / Defect';
+
+export interface MaturityBoundingBox {
+  id: string; // e.g. "TM001", "TM002"
+  label: string; // e.g. "Tomato Cluster", "Fruit #2"
+  stage: MaturityStage;
+  confidence: number; // 0.0 - 1.0
+  harvestInDays: number; // 0 for ready, 5-12 for ripening, 15-25 for green
+  box: {
+    x: number; // percentage 0-100
+    y: number; // percentage 0-100
+    width: number; // percentage 0-100
+    height: number; // percentage 0-100
+  };
+  colorHex: string; // #10b981 (green), #f59e0b (amber), #ef4444 (red), etc.
+  brixScore?: number; // e.g. 5.8
+  firmnessN?: number; // e.g. 18.5
+  chlorophyllPercent?: number; // e.g. 12
+}
+
+export interface MaturityStageSummary {
+  stage: MaturityStage;
+  count: number;
+  percentage: number;
+  harvestInDays: number;
+  thumbnailUrl?: string;
+  badgeColor: string;
+  recommendation: string;
+}
+
+export interface CropMaturityScanResult {
+  id: string;
+  cropName: string;
+  variety?: string;
+  imageUrl: string;
+  timestamp: string;
+  overallMaturityScore: number; // 0 - 100%
+  overallStatus: 'Harvest Now' | 'Harvest in 3-7 Days' | 'Harvest in 10-18 Days' | 'Vegetative Growth';
+  daysToOptimalHarvest: number;
+  totalDetectedObjects: number;
+  harvestReadyCount: number;
+  ripeningCount: number;
+  immatureCount: number;
+  boundingBoxes: MaturityBoundingBox[];
+  stageSummaries: MaturityStageSummary[];
+  qualityMetrics: {
+    averageBrixScore: number; // °Bx (e.g. 6.4)
+    chlorophyllDegradationPercent: number; // e.g. 82%
+    firmnessIndexN: number; // N (e.g. 19.2)
+    estimatedYieldKgPerPlant: number; // e.g. 3.8 kg
+    marketReadinessIndex: number; // 0 - 100
+    colorUniformityPercent: number; // e.g. 91%
+    recommendedHarvestWindow: string; // e.g. "Pick within 24-48 hours in early morning"
+  };
+  harvestActionPlan: string[];
 }
 
 export interface DiseaseScanResult {

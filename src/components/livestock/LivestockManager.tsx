@@ -8,6 +8,7 @@ import {
   FileSpreadsheet, Award, Info, AlertTriangle, Syringe
 } from 'lucide-react';
 import { LivestockAnimal, AnimalType } from '@/types/schema';
+import { AgriImage } from '@/components/ui/AgriImage';
 
 interface LivestockManagerProps {
   livestock: LivestockAnimal[];
@@ -307,9 +308,10 @@ export const LivestockManager: React.FC<LivestockManagerProps> = ({
             <div className="space-y-3">
               {/* Photo & Badges */}
               <div className="relative h-48 w-full rounded-2xl overflow-hidden bg-[var(--bg-app)]">
-                <img
-                  src={animal.imageUrl || 'https://images.unsplash.com/photo-1546445317-29f4545f9d52?auto=format&fit=crop&w=600&q=80'}
+                <AgriImage
+                  src={animal.imageUrl || 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?auto=format&fit=crop&w=800&q=80'}
                   alt={animal.tagNumber}
+                  fallbackType="livestock"
                   className="h-full w-full object-cover group-hover:scale-105 transition duration-500"
                 />
                 <div className="absolute top-2 left-2 flex gap-1">

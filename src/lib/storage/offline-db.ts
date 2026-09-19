@@ -18,6 +18,8 @@ const STORAGE_KEYS = {
   USER_PROFILE: 'agrivision_user_profile',
 };
 
+const DB_VERSION_KEY = 'agrivision_db_version_v3_2';
+
 class OfflineStorageManager {
   private listeners: Set<() => void> = new Set();
 
@@ -39,34 +41,51 @@ class OfflineStorageManager {
   }
 
   private initDefaultData() {
-    if (!localStorage.getItem(STORAGE_KEYS.FARMS)) {
+    const currentVersion = localStorage.getItem(DB_VERSION_KEY);
+    const shouldUpgrade = currentVersion !== '3.2';
+
+    if (shouldUpgrade || !localStorage.getItem(STORAGE_KEYS.FARMS)) {
       localStorage.setItem(STORAGE_KEYS.FARMS, JSON.stringify(INITIAL_FARMS));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.FIELDS)) {
+    if (shouldUpgrade || !localStorage.getItem(STORAGE_KEYS.FIELDS)) {
       localStorage.setItem(STORAGE_KEYS.FIELDS, JSON.stringify(INITIAL_FIELDS));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.CROPS)) {
-      localStorage.setItem(STORAGE_KEYS.CROPS, JSON.stringify(INITIAL_CROPS));
+    if (shouldUpgrade || !localStorage.getItem(STORAGE_KEYS.CROPS)) {
+      // Merge: keep custom user-added crops, replace seed defaults with fresh HD URLs & agronomy specs
+      const existingCropsStr = localStorage.getItem(STORAGE_KEYS.CROPS);
+      let userCustomCrops: CropItem[] = [];
+      if (existingCropsStr) {
+        try {
+          const parsed = JSON.parse(existingCropsStr) as CropItem[];
+          userCustomCrops = parsed.filter(c => !INITIAL_CROPS.some(ic => ic.id === c.id));
+        } catch {
+          userCustomCrops = [];
+        }
+      }
+      localStorage.setItem(STORAGE_KEYS.CROPS, JSON.stringify([...INITIAL_CROPS, ...userCustomCrops]));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.LIVESTOCK)) {
+    if (shouldUpgrade || !localStorage.getItem(STORAGE_KEYS.LIVESTOCK)) {
       localStorage.setItem(STORAGE_KEYS.LIVESTOCK, JSON.stringify(INITIAL_LIVESTOCK));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.ADVISORIES)) {
+    if (shouldUpgrade || !localStorage.getItem(STORAGE_KEYS.ADVISORIES)) {
       localStorage.setItem(STORAGE_KEYS.ADVISORIES, JSON.stringify(INITIAL_ADVISORIES));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.ALERTS)) {
+    if (shouldUpgrade || !localStorage.getItem(STORAGE_KEYS.ALERTS)) {
       localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(INITIAL_ALERTS));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.TASKS)) {
+    if (shouldUpgrade || !localStorage.getItem(STORAGE_KEYS.TASKS)) {
       localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(INITIAL_TASKS));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.TIMELINE)) {
+    if (shouldUpgrade || !localStorage.getItem(STORAGE_KEYS.TIMELINE)) {
       localStorage.setItem(STORAGE_KEYS.TIMELINE, JSON.stringify(INITIAL_TIMELINE));
     }
     if (!localStorage.getItem(STORAGE_KEYS.ACTIVE_FARM_ID)) {
       localStorage.setItem(STORAGE_KEYS.ACTIVE_FARM_ID, 'farm-1');
     }
+
+    localStorage.setItem(DB_VERSION_KEY, '3.2');
   }
+
 
   public getFarms(): Farm[] {
     if (typeof window === 'undefined') return INITIAL_FARMS;
@@ -94,6 +113,14 @@ class OfflineStorageManager {
     farms.push(farm);
     localStorage.setItem(STORAGE_KEYS.FARMS, JSON.stringify(farms));
     this.setActiveFarmId(farm.id);
+    this.notify();
+  }
+
+  public updateFarm(updatedFarm: Farm) {
+    const data = localStorage.getItem(STORAGE_KEYS.FARMS);
+    let farms: Farm[] = data ? JSON.parse(data) : INITIAL_FARMS;
+    farms = farms.map((f) => (f.id === updatedFarm.id ? updatedFarm : f));
+    localStorage.setItem(STORAGE_KEYS.FARMS, JSON.stringify(farms));
     this.notify();
   }
 

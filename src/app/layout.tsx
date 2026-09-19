@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   description: 'Enterprise AI AgriTech SaaS Platform combining crop vision pathology, livestock monitoring, interactive digital twin, weather intelligence, and farm advisory.',
 };
 
+import { LanguageProvider } from '@/lib/i18n/LanguageContext';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,7 +26,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className="h-full bg-[var(--bg-app)] text-[var(--text-main)] font-sans antialiased">
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

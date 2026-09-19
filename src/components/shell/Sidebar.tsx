@@ -34,6 +34,8 @@ interface SidebarProps {
   unresolvedAdvisoriesCount: number;
 }
 
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onSelectTab,
@@ -41,21 +43,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
   unresolvedAdvisoriesCount,
 }) => {
+  const { t } = useLanguage();
+
   const navItems = [
-    { id: 'overview' as NavTab, label: 'Overview', icon: LayoutDashboard },
-    { id: 'twin' as NavTab, label: 'Farm Twin', icon: Map },
-    { id: 'crops' as NavTab, label: 'Crops (35+)', icon: Sprout },
-    { id: 'livestock' as NavTab, label: 'Livestock (USP)', icon: UserCheck, badge: 'Flagship' },
-    { id: 'marketplace' as NavTab, label: 'Marketplace', icon: ShoppingBag, badge: 'Bargain' },
-    { id: 'community' as NavTab, label: 'Community Hub', icon: Users, badge: 'Live Mandi' },
-    { id: 'vision' as NavTab, label: 'AI Vision', icon: Sparkles, badge: 'AI' },
-    { id: 'advisory' as NavTab, label: 'Advisory', icon: ShieldAlert, count: unresolvedAdvisoriesCount },
-    { id: 'timeline' as NavTab, label: 'Timeline', icon: History },
-    { id: 'analytics' as NavTab, label: 'Analytics', icon: BarChart3 },
-    { id: 'weather' as NavTab, label: 'Weather', icon: CloudSun },
-    { id: 'tasks' as NavTab, label: 'Tasks', icon: CheckSquare },
-    { id: 'alerts' as NavTab, label: 'Alerts', icon: Bell },
-    { id: 'assistant' as NavTab, label: 'AI Assistant', icon: MessageSquareText },
+    { id: 'overview' as NavTab, label: t.nav.overview, icon: LayoutDashboard },
+    { id: 'twin' as NavTab, label: t.nav.twin, icon: Map },
+    { id: 'crops' as NavTab, label: t.nav.crops, icon: Sprout },
+    { id: 'livestock' as NavTab, label: t.nav.livestock, icon: UserCheck, badge: 'Flagship' },
+    { id: 'marketplace' as NavTab, label: t.nav.marketplace, icon: ShoppingBag, badge: 'Bargain' },
+    { id: 'community' as NavTab, label: t.nav.community, icon: Users, badge: 'Live Mandi' },
+    { id: 'vision' as NavTab, label: t.nav.vision, icon: Sparkles, badge: 'AI' },
+    { id: 'advisory' as NavTab, label: t.nav.advisory, icon: ShieldAlert, count: unresolvedAdvisoriesCount },
+    { id: 'timeline' as NavTab, label: t.nav.timeline, icon: History },
+    { id: 'analytics' as NavTab, label: t.nav.analytics, icon: BarChart3 },
+    { id: 'weather' as NavTab, label: t.nav.weather, icon: CloudSun },
+    { id: 'tasks' as NavTab, label: t.nav.tasks, icon: CheckSquare },
+    { id: 'alerts' as NavTab, label: t.nav.alerts, icon: Bell },
+    { id: 'assistant' as NavTab, label: t.nav.assistant, icon: MessageSquareText },
     { id: 'admin' as NavTab, label: 'SaaS Admin', icon: Shield },
     { id: 'settings' as NavTab, label: 'Settings', icon: Settings },
   ];

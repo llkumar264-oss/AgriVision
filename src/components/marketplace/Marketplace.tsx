@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { MarketplaceItem, MarketCategory, BargainOffer } from '@/types/schema';
 import { INITIAL_MARKETPLACE_ITEMS } from '@/lib/mock-data';
+import { AgriImage } from '@/components/ui/AgriImage';
 
 interface MarketplaceProps {
   onOpenAssistant?: (query: string) => void;
@@ -235,9 +236,10 @@ export const Marketplace: React.FC<MarketplaceProps> = ({ onOpenAssistant }) => 
             <div className="space-y-3">
               {/* Product Image & Badges */}
               <div className="relative h-44 w-full rounded-xl overflow-hidden bg-[var(--bg-app)]">
-                <img
-                  src={item.imageUrl}
+                <AgriImage
+                  src={item.imageUrl || 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=800&q=80'}
                   alt={item.title}
+                  fallbackType="seed"
                   className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
                 />
                 <div className="absolute top-2 left-2 flex flex-col gap-1">
