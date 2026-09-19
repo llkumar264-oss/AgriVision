@@ -1,5 +1,10 @@
 import type { Metadata } from 'next';
+import React from 'react';
 import './globals.css';
+
+// Prevent static prerendering — the app uses client-side Firebase Auth
+// which requires real env vars at runtime, not build time.
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'AgriVision | One Intelligent System for Your Entire Farm',

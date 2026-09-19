@@ -1,8 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { offlineStorage } from '@/lib/storage/offline-db';
-import { Farm, CropItem, LivestockAnimal, FieldZone, AdvisoryItem, AlertNotification, FarmTask, TimelineEvent, WeatherData, UserProfile } from '@/types/schema';
+import {
+  Farm,
+  CropItem,
+  LivestockAnimal,
+  FieldZone,
+  AdvisoryItem,
+  AlertNotification,
+  FarmTask,
+  TimelineEvent,
+  WeatherData,
+  UserProfile,
+} from '@/types/schema';
 import { fetchFarmWeather } from '@/lib/services/weather-service';
 
 // App Shell Components
@@ -29,13 +42,17 @@ import { AlertsView } from '@/components/alerts/AlertsView';
 import { FarmerSimpleMode } from '@/components/simple-mode/FarmerSimpleMode';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { DemoModeModal } from '@/components/demo/DemoModeModal';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
+  // ── Auth state (driven by Firebase, not localStorage) ───────────────────
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true); // true until Firebase resolves
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  // ── Farm / Data States ───────────────────────────────────────────────────
   const [farms, setFarms] = useState<Farm[]>([]);
   const [activeFarmId, setActiveFarmId] = useState<string>('farm-1');
-  
-  // Data States
   const [fields, setFields] = useState<FieldZone[]>([]);
   const [crops, setCrops] = useState<CropItem[]>([]);
   const [livestock, setLivestock] = useState<LivestockAnimal[]>([]);
@@ -45,7 +62,7 @@ export default function Home() {
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [weather, setWeather] = useState<WeatherData | null>(null);
 
-  // App Navigation & Modals
+  // ── App Navigation & Modals ──────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<NavTab>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -54,21 +71,42 @@ export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [assistantInitialQuery, setAssistantInitialQuery] = useState('');
 
-  // Check saved session on mount
+  // ── Firebase auth state listener ─────────────────────────────────────────
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedUser = localStorage.getItem('agrivision_user_profile');
-      if (savedUser) {
-        setUserProfile(JSON.parse(savedUser));
-      }
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      setAuthLoading(false);
 
+      if (user) {
+        // Restore profile associated with this Firebase UID from localStorage
+        // (localStorage is used only for non-auth UI preferences/profile data)
+        const savedProfile = localStorage.getItem(`agrivision_profile_${user.uid}`);
+        if (savedProfile) {
+          try {
+            setUserProfile(JSON.parse(savedProfile));
+          } catch {
+            setUserProfile(null);
+          }
+        } else {
+          // Firebase user exists but no profile yet — show farm setup
+          setUserProfile(null);
+        }
+      } else {
+        // Not authenticated
+        setUserProfile(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // ── Farm data loader ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!firebaseUser) return;
     const loadData = () => {
       const fList = offlineStorage.getFarms();
       setFarms(fList);
       const curFarmId = offlineStorage.getActiveFarmId();
       setActiveFarmId(curFarmId);
-
       setCrops(offlineStorage.getCrops(curFarmId));
       setLivestock(offlineStorage.getLivestock(curFarmId));
       setAdvisories(offlineStorage.getAdvisories(curFarmId));
@@ -76,20 +114,23 @@ export default function Home() {
       setTasks(offlineStorage.getTasks(curFarmId));
       setTimeline(offlineStorage.getTimeline(curFarmId));
     };
-
     loadData();
     const unsubscribe = offlineStorage.subscribe(loadData);
     return () => unsubscribe();
-  }, []);
+  }, [firebaseUser]);
 
-  // Fetch weather data for active farm
+  // ── Weather ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    const activeFarm = farms.find(f => f.id === activeFarmId);
-    fetchFarmWeather(activeFarm?.latitude || 26.8206, activeFarm?.longitude || 75.8055, activeFarm?.district || 'Jaipur')
-      .then(setWeather);
-  }, [activeFarmId, farms]);
+    if (!firebaseUser) return;
+    const activeFarm = farms.find((f) => f.id === activeFarmId);
+    fetchFarmWeather(
+      activeFarm?.latitude ?? 26.8206,
+      activeFarm?.longitude ?? 75.8055,
+      activeFarm?.district ?? 'Jaipur'
+    ).then(setWeather);
+  }, [activeFarmId, farms, firebaseUser]);
 
-  const activeFarm = farms.find((f) => f.id === activeFarmId) || farms[0] || null;
+  const activeFarm = farms.find((f) => f.id === activeFarmId) ?? farms[0] ?? null;
 
   const handleSelectFarm = (fId: string) => {
     setActiveFarmId(fId);
@@ -110,7 +151,7 @@ export default function Home() {
       priority: 'High',
       status: 'Todo',
       dueDate: new Date().toISOString().split('T')[0],
-      assignedTo: userProfile?.name || 'Farm Owner',
+      assignedTo: userProfile?.name ?? 'Farm Owner',
       createdAt: new Date().toISOString(),
     };
     offlineStorage.addTask(newTask);
@@ -124,7 +165,7 @@ export default function Home() {
       description,
       type: 'advisory',
       icon: 'CheckSquare',
-      actor: userProfile?.name || 'Farm Owner',
+      actor: userProfile?.name ?? 'Farm Owner',
     };
     offlineStorage.addTimelineEvent(newEvent);
     setActiveTab('tasks');
@@ -133,6 +174,27 @@ export default function Home() {
   const handleOpenAssistant = (query: string) => {
     setAssistantInitialQuery(query);
     setActiveTab('assistant');
+  };
+
+  // ── Logout — uses Firebase signOut ──────────────────────────────────────
+  const handleLogout = async () => {
+    await signOut(auth);
+    // Clear profile (non-auth, non-sensitive) data for this UID
+    if (firebaseUser) {
+      localStorage.removeItem(`agrivision_profile_${firebaseUser.uid}`);
+    }
+    setUserProfile(null);
+    setFarms([]);
+  };
+
+  // ── Auth callback from AuthFlow ──────────────────────────────────────────
+  const handleCompleteAuth = (user: UserProfile, farm: Farm) => {
+    setUserProfile(user);
+    // Persist non-auth profile (display name, preferences) keyed by Firebase UID
+    if (firebaseUser) {
+      localStorage.setItem(`agrivision_profile_${firebaseUser.uid}`, JSON.stringify(user));
+    }
+    offlineStorage.addFarm(farm);
   };
 
   const defaultFields: FieldZone[] = [
@@ -146,22 +208,32 @@ export default function Home() {
 
   const activeFields = fields.length ? fields : defaultFields;
 
-  // Unauthenticated OTP Authentication View
-  if (!userProfile) {
+  // ── Loading state while Firebase resolves auth ────────────────────────────
+  if (authLoading) {
     return (
-      <AuthFlow
-        onCompleteAuth={(u, f) => {
-          setUserProfile(u);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('agrivision_user_profile', JSON.stringify(u));
-          }
-          offlineStorage.addFarm(f);
-        }}
-      />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-agri)] text-white text-2xl font-bold shadow-sm">
+            A
+          </div>
+          <Loader2 className="h-6 w-6 animate-spin text-[var(--primary-agri)]" />
+          <p className="text-xs text-[var(--text-muted)] font-medium">Loading AgriVision…</p>
+        </div>
+      </div>
     );
   }
 
-  // Accessible Farmer Simple Mode view
+  // ── Not authenticated → Show Auth Flow ────────────────────────────────────
+  if (!firebaseUser) {
+    return <AuthFlow onCompleteAuth={handleCompleteAuth} />;
+  }
+
+  // ── Authenticated but no farm profile yet → Show Auth Flow (Farm Setup) ──
+  if (!userProfile) {
+    return <AuthFlow onCompleteAuth={handleCompleteAuth} />;
+  }
+
+  // ── Accessible Farmer Simple Mode ─────────────────────────────────────────
   if (isSimpleMode) {
     return (
       <FarmerSimpleMode
@@ -172,6 +244,7 @@ export default function Home() {
     );
   }
 
+  // ── Main Dashboard ────────────────────────────────────────────────────────
   return (
     <div className="flex h-screen w-full bg-[var(--bg-app)] overflow-hidden font-sans">
       {/* Desktop Sidebar */}
@@ -180,7 +253,7 @@ export default function Home() {
         onSelectTab={setActiveTab}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        unresolvedAdvisoriesCount={advisories.filter(a => a.status === 'active').length}
+        unresolvedAdvisoriesCount={advisories.filter((a) => a.status === 'active').length}
       />
 
       {/* Main Workspace */}
@@ -196,31 +269,30 @@ export default function Home() {
           onStartDemo={() => setDemoOpen(true)}
           darkMode={darkMode}
           onToggleDarkMode={handleToggleDarkMode}
-          unreadAlertsCount={alerts.filter(a => !a.read).length}
+          unreadAlertsCount={alerts.filter((a) => !a.read).length}
           onOpenNotifications={() => setActiveTab('alerts')}
         />
 
         {/* Dynamic Main View Area */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6 space-y-6">
-          {/* TAB 1: OVERVIEW DASHBOARD (12-column Multi-Grid) */}
+
+          {/* TAB 1: OVERVIEW DASHBOARD */}
           {activeTab === 'overview' && (
             <div className="space-y-6 animate-fade-in">
               {/* Greeting Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-4">
                 <div>
                   <h1 className="text-xl font-extrabold text-[var(--text-main)]">
-                    Good morning, {userProfile?.name || activeFarm?.farmerName || 'Farmer'}
+                    Good morning, {userProfile?.name ?? activeFarm?.farmerName ?? 'Farmer'}
                   </h1>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    Your farm is healthy overall. 2 areas need attention in {activeFarm?.name || 'Your Farm'}.
+                    Your farm is healthy overall. 2 areas need attention in {activeFarm?.name ?? 'Your Farm'}.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      localStorage.removeItem('agrivision_user_profile');
-                      setUserProfile(null);
-                    }}
+                    id="logout-btn"
+                    onClick={handleLogout}
                     className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-xl hover:bg-red-100 transition"
                   >
                     Switch Account / Logout
@@ -233,71 +305,35 @@ export default function Home() {
 
               {/* 12-Column Multi-Grid Layout */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                {/* Farm Health Index Score (8 columns) */}
                 <div className="md:col-span-8">
-                  <FarmHealthScore
-                    score={87}
-                    crops={crops}
-                    livestock={livestock}
-                    fields={activeFields}
-                  />
+                  <FarmHealthScore score={87} crops={crops} livestock={livestock} fields={activeFields} />
                 </div>
-
-                {/* Live Weather Widget (4 columns) */}
                 <div className="md:col-span-4">
                   {weather && <WeatherCard weather={weather} />}
                 </div>
-
-                {/* Farm Digital Twin Map (12 columns) */}
                 <div className="md:col-span-12">
                   <FarmTwin fields={activeFields} />
                 </div>
-
-                {/* Priority Advisories (7 columns) */}
                 <div className="md:col-span-7">
-                  <AdvisoryCenter
-                    advisories={advisories}
-                    onAddTask={handleAddTask}
-                    onOpenAssistant={handleOpenAssistant}
-                  />
+                  <AdvisoryCenter advisories={advisories} onAddTask={handleAddTask} onOpenAssistant={handleOpenAssistant} />
                 </div>
-
-                {/* Tasks Snapshot (5 columns) */}
                 <div className="md:col-span-5">
-                  <TasksView
-                    tasks={tasks}
-                    onToggleTask={(id) => offlineStorage.toggleTaskStatus(id)}
-                    onAddTask={handleAddTask}
-                  />
+                  <TasksView tasks={tasks} onToggleTask={(id) => offlineStorage.toggleTaskStatus(id)} onAddTask={handleAddTask} />
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 2: FARM DIGITAL TWIN */}
-          {activeTab === 'twin' && (
-            <FarmTwin fields={activeFields} />
-          )}
+          {activeTab === 'twin' && <FarmTwin fields={activeFields} />}
 
-          {/* TAB 3: CROP MANAGEMENT */}
           {activeTab === 'crops' && (
-            <CropManagement
-              crops={crops}
-              onAddCrop={(c) => offlineStorage.addCrop(c)}
-              onOpenAssistant={handleOpenAssistant}
-            />
+            <CropManagement crops={crops} onAddCrop={(c) => offlineStorage.addCrop(c)} onOpenAssistant={handleOpenAssistant} />
           )}
 
-          {/* TAB 4: LIVESTOCK MANAGEMENT */}
           {activeTab === 'livestock' && (
-            <LivestockManager
-              livestock={livestock}
-              onAddAnimal={(a) => offlineStorage.addLivestock(a)}
-              onOpenAssistant={handleOpenAssistant}
-            />
+            <LivestockManager livestock={livestock} onAddAnimal={(a) => offlineStorage.addLivestock(a)} onOpenAssistant={handleOpenAssistant} />
           )}
 
-          {/* TAB 5: AI VISION CROP SCANNER */}
           {activeTab === 'vision' && (
             <CropScanner
               crops={crops}
@@ -311,7 +347,7 @@ export default function Home() {
                   description: `Affected area ${scan.affectedAreaPercent}%, Confidence ${Math.round(scan.confidence * 100)}%`,
                   type: 'scan',
                   icon: 'Camera',
-                  actor: userProfile?.name || 'Farm Owner',
+                  actor: userProfile?.name ?? 'Farm Owner',
                 };
                 offlineStorage.addTimelineEvent(newEv);
                 setActiveTab('timeline');
@@ -321,67 +357,45 @@ export default function Home() {
             />
           )}
 
-          {/* TAB 6: AI ADVISORY CENTER */}
           {activeTab === 'advisory' && (
-            <AdvisoryCenter
-              advisories={advisories}
-              onAddTask={handleAddTask}
-              onOpenAssistant={handleOpenAssistant}
-            />
+            <AdvisoryCenter advisories={advisories} onAddTask={handleAddTask} onOpenAssistant={handleOpenAssistant} />
           )}
 
-          {/* TAB 7: FARM FEED */}
           {activeTab === 'feed' && (
-            <FarmFeed
-              onAddTask={handleAddTask}
-              onOpenAssistant={handleOpenAssistant}
-            />
+            <FarmFeed onAddTask={handleAddTask} onOpenAssistant={handleOpenAssistant} />
           )}
 
-          {/* TAB 8: TIMELINE */}
           {activeTab === 'timeline' && <TimelineView timeline={timeline} />}
-
-          {/* TAB 9: ANALYTICS */}
           {activeTab === 'analytics' && <AnalyticsView />}
-
-          {/* TAB 10: WEATHER INTELLIGENCE */}
           {activeTab === 'weather' && weather && <WeatherCard weather={weather} />}
 
-          {/* TAB 11: TASKS CENTER */}
           {activeTab === 'tasks' && (
-            <TasksView
-              tasks={tasks}
-              onToggleTask={(id) => offlineStorage.toggleTaskStatus(id)}
-              onAddTask={handleAddTask}
-            />
+            <TasksView tasks={tasks} onToggleTask={(id) => offlineStorage.toggleTaskStatus(id)} onAddTask={handleAddTask} />
           )}
 
-          {/* TAB 12: ALERTS & NOTIFICATIONS */}
           {activeTab === 'alerts' && <AlertsView alerts={alerts} />}
 
-          {/* TAB 13: AGRI ASSISTANT */}
           {activeTab === 'assistant' && (
-            <AgriAssistant
-              initialQuery={assistantInitialQuery}
-              onAddTask={handleAddTask}
-            />
+            <AgriAssistant initialQuery={assistantInitialQuery} onAddTask={handleAddTask} />
           )}
 
-          {/* TAB 14: SAAS ADMIN PANEL */}
           {activeTab === 'admin' && <AdminDashboard />}
 
-          {/* TAB 15: SETTINGS & PROFILE */}
           {activeTab === 'settings' && (
             <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-xs space-y-4 max-w-xl mx-auto">
-              <h2 className="text-lg font-bold text-[var(--text-main)]">User Profile & Account</h2>
+              <h2 className="text-lg font-bold text-[var(--text-main)]">User Profile &amp; Account</h2>
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between border-b border-[var(--border-subtle)] pb-2">
                   <span className="text-[var(--text-muted)]">Farmer Name</span>
                   <span className="font-bold text-[var(--text-main)]">{userProfile?.name}</span>
                 </div>
                 <div className="flex justify-between border-b border-[var(--border-subtle)] pb-2">
-                  <span className="text-[var(--text-muted)]">Verified Contact</span>
+                  <span className="text-[var(--text-muted)]">Verified Phone</span>
                   <span className="font-bold text-[var(--text-main)]">{userProfile?.phone}</span>
+                </div>
+                <div className="flex justify-between border-b border-[var(--border-subtle)] pb-2">
+                  <span className="text-[var(--text-muted)]">Firebase UID</span>
+                  <span className="font-mono text-[10px] text-[var(--text-muted)] truncate max-w-[180px]">{firebaseUser?.uid}</span>
                 </div>
                 <div className="flex justify-between border-b border-[var(--border-subtle)] pb-2">
                   <span className="text-[var(--text-muted)]">Active Farm</span>
@@ -393,13 +407,11 @@ export default function Home() {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  localStorage.removeItem('agrivision_user_profile');
-                  setUserProfile(null);
-                }}
+                id="settings-logout-btn"
+                onClick={handleLogout}
                 className="w-full rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition mt-4"
               >
-                Log Out & Switch User
+                Log Out &amp; Switch User
               </button>
             </div>
           )}
@@ -410,7 +422,7 @@ export default function Home() {
       <MobileNav
         activeTab={activeTab}
         onSelectTab={setActiveTab}
-        unreadAlertsCount={alerts.filter(a => !a.read).length}
+        unreadAlertsCount={alerts.filter((a) => !a.read).length}
       />
 
       {/* Global Command Palette Search */}
@@ -421,7 +433,7 @@ export default function Home() {
         livestock={livestock}
         tasks={tasks}
         advisories={advisories}
-        onSelectResult={(type, id) => {
+        onSelectResult={(type) => {
           if (type === 'crop') setActiveTab('crops');
           if (type === 'livestock') setActiveTab('livestock');
           if (type === 'task') setActiveTab('tasks');
@@ -429,7 +441,7 @@ export default function Home() {
         }}
       />
 
-      {/* Guided 20-Second Demo Modal */}
+      {/* Guided Demo Modal */}
       <DemoModeModal
         isOpen={demoOpen}
         onClose={() => setDemoOpen(false)}
