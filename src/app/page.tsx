@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, DEV_BYPASS } from '@/lib/firebase';
 import { offlineStorage } from '@/lib/storage/offline-db';
 import {
   Farm,
@@ -30,7 +30,6 @@ import { FarmHealthScore } from '@/components/dashboard/FarmHealthScore';
 import { FarmTwin } from '@/components/farm/FarmTwin';
 import { CropManagement } from '@/components/crops/CropManagement';
 import { CropScanner } from '@/components/ai-vision/CropScanner';
-import { FarmFeed } from '@/components/feed/FarmFeed';
 import { LivestockManager } from '@/components/livestock/LivestockManager';
 import { AdvisoryCenter } from '@/components/advisory/AdvisoryCenter';
 import { AgriAssistant } from '@/components/ai-assistant/AgriAssistant';
@@ -45,9 +44,6 @@ import { FarmerSimpleMode } from '@/components/simple-mode/FarmerSimpleMode';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { DemoModeModal } from '@/components/demo/DemoModeModal';
 import { Loader2 } from 'lucide-react';
-
-// Dev bypass: when NEXT_PUBLIC_DEV_BYPASS=true, Firebase is skipped entirely.
-const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS === 'true';
 
 export default function Home() {
   // ── Auth state (driven by Firebase, not localStorage) ───────────────────
@@ -75,40 +71,49 @@ export default function Home() {
   const [demoOpen, setDemoOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [assistantInitialQuery, setAssistantInitialQuery] = useState('');
-  // Dev mode auth gate (used when NEXT_PUBLIC_DEV_BYPASS=true)
+  // Dev mode auth gate (used when NEXT_PUBLIC_DEV_BYPASS=true or Firebase keys not configured)
   const [devAuthenticated, setDevAuthenticated] = useState(false);
 
-  // ── Firebase auth state listener (skipped in dev bypass mode) ───────────────
+  // ── Firebase auth state listener ──────────────────────────────────────────
   useEffect(() => {
-    if (DEV_BYPASS) {
-      // No Firebase calls in dev mode — app starts unauthenticated.
+    if (DEV_BYPASS || !auth) {
       setAuthLoading(false);
+      const savedDev = localStorage.getItem('agrivision_profile_dev');
+      if (savedDev) {
+        try {
+          setUserProfile(JSON.parse(savedDev));
+          setDevAuthenticated(true);
+        } catch {
+          setUserProfile(null);
+        }
+      }
       return;
     }
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-      setAuthLoading(false);
+    try {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setFirebaseUser(user);
+        setAuthLoading(false);
 
-      if (user) {
-        // Restore profile associated with this Firebase UID from localStorage
-        // (localStorage is used only for non-auth UI preferences/profile data)
-        const savedProfile = localStorage.getItem(`agrivision_profile_${user.uid}`);
-        if (savedProfile) {
-          try {
-            setUserProfile(JSON.parse(savedProfile));
-          } catch {
+        if (user) {
+          const savedProfile = localStorage.getItem(`agrivision_profile_${user.uid}`);
+          if (savedProfile) {
+            try {
+              setUserProfile(JSON.parse(savedProfile));
+            } catch {
+              setUserProfile(null);
+            }
+          } else {
             setUserProfile(null);
           }
         } else {
-          // Firebase user exists but no profile yet — show farm setup
           setUserProfile(null);
         }
-      } else {
-        // Not authenticated
-        setUserProfile(null);
-      }
-    });
-    return () => unsubscribe();
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn('Firebase auth listener skipped:', e);
+      setAuthLoading(false);
+    }
   }, []);
 
   // ── Farm data loader ──────────────────────────────────────────────────────

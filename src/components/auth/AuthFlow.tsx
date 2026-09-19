@@ -6,7 +6,7 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult,
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, DEV_BYPASS } from '@/lib/firebase';
 import {
   Phone,
   ArrowRight,
@@ -75,8 +75,7 @@ function maskPhone(phone: string): string {
   return `+91 ${digits.slice(0, 2)}XXXXX${digits.slice(-3)}`;
 }
 
-// ─── Dev bypass flag (set NEXT_PUBLIC_DEV_BYPASS=true in .env.local) ────────
-const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS === 'true';
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
   const [step, setStep] = useState<'credentials' | 'otp' | 'farm'>('credentials');
