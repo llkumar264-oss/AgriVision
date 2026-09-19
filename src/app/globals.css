@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-app: #fbfbfa;
+    --surface-card: #ffffff;
+    --surface-hover: #f4f4f5;
+    --text-main: #18181b;
+    --text-muted: #71717a;
+    --text-subtle: #a1a1aa;
+    --border-subtle: #e4e4e7;
+    --border-strong: #d4d4d8;
+    
+    --primary-agri: #1b4d3e;
+    --primary-agri-hover: #143d31;
+    --primary-agri-light: #eef7f3;
+    
+    --warning-amber: #d97706;
+    --warning-bg: #fffbeb;
+    --critical-red: #dc2626;
+    --critical-bg: #fef2f2;
+    --success-green: #16a34a;
+    --success-bg: #f0fdf4;
+  }
+
+  .dark {
+    --bg-app: #0f0f11;
+    --surface-card: #18181b;
+    --surface-hover: #27272a;
+    --text-main: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --text-subtle: #71717a;
+    --border-subtle: #27272a;
+    --border-strong: #3f3f46;
+    
+    --primary-agri: #2d6a4f;
+    --primary-agri-hover: #40916c;
+    --primary-agri-light: #1b3a2d;
+    
+    --warning-amber: #f59e0b;
+    --warning-bg: #2d2006;
+    --critical-red: #ef4444;
+    --critical-bg: #331313;
+    --success-green: #22c55e;
+    --success-bg: #0c2b18;
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Numeric formatting for analytics */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(161, 161, 170, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(161, 161, 170, 0.5);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.animate-pulse-subtle {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
