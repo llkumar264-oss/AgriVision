@@ -313,9 +313,24 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
     e.preventDefault();
     setIsSettingUp(true);
 
+    // SECURITY: Only proceed when Firebase has a confirmed, verified user.
+    // Never fall back to a generated ID — that would bypass authentication.
     const firebaseUser = auth.currentUser;
-    const uid = firebaseUser?.uid ?? `user-${Date.now()}`;
-    const verifiedPhone = firebaseUser?.phoneNumber ?? `+91${phoneNumber.replace(/\D/g, '')}`;
+    if (!firebaseUser) {
+      setIsSettingUp(false);
+      // Something went wrong (session lost between OTP confirm and farm setup).
+      // Reset to the beginning so the user re-authenticates properly.
+      setOtpError(
+        'Authentication session lost. Please verify your phone number again.'
+      );
+      setStep('credentials');
+      setConfirmationResult(null);
+      setOtpDigits(['', '', '', '', '', '']);
+      return;
+    }
+
+    const uid = firebaseUser.uid;
+    const verifiedPhone = firebaseUser.phoneNumber ?? `+91${phoneNumber.replace(/\D/g, '')}`;
 
     const user: UserProfile = {
       id: uid,
@@ -329,7 +344,7 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
 
     const farm: Farm = {
       id: `farm-${Date.now()}`,
-      ownerId: uid,
+      ownerId: uid,           // Farm owner ID always equals the Firebase UID
       name: farmName || 'My Farm',
       farmerName: user.name,
       state: farmState,
@@ -427,6 +442,12 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
                 />
               </div>
             </div>
+
+            {/* SMS consent notice */}
+            <p className="text-[11px] text-[var(--text-muted)] text-center leading-snug">
+              By continuing, you agree to receive an SMS verification code.
+              Standard messaging rates may apply.
+            </p>
 
             {/* Phone / reCAPTCHA error */}
             {phoneError && (
@@ -530,10 +551,11 @@ export const AuthFlow: React.FC<AuthFlowProps> = ({ onCompleteAuth }) => {
               )}
             </div>
 
-            {/* Resend reCAPTCHA (needed for resend) */}
-            <div className="flex justify-center">
-              <div id="recaptcha-container" />
-            </div>
+            {/* NOTE: The reCAPTCHA verifier is kept alive in recaptchaVerifierRef.
+                 The actual DOM container lives only on the credentials step
+                 (id="recaptcha-container" rendered there). Rendering a second
+                 element with the same id here would violate DOM uniqueness and
+                 break Firebase's internal widget lookup. */}
 
             <button
               id="verify-otp-btn"
