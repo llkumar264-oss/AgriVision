@@ -102,9 +102,11 @@ class OfflineStorageManager {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.CROPS);
       const crops: CropItem[] = data ? JSON.parse(data) : INITIAL_CROPS;
-      return crops.filter((c) => c.farmId === farmId);
+      const filtered = crops.filter((c) => c.farmId === farmId);
+      if (filtered.length > 0) return filtered;
+      return INITIAL_CROPS.map((c) => ({ ...c, farmId }));
     } catch {
-      return INITIAL_CROPS;
+      return INITIAL_CROPS.map((c) => ({ ...c, farmId }));
     }
   }
 
@@ -129,9 +131,11 @@ class OfflineStorageManager {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.LIVESTOCK);
       const animals: LivestockAnimal[] = data ? JSON.parse(data) : INITIAL_LIVESTOCK;
-      return animals.filter((a) => a.farmId === farmId);
+      const filtered = animals.filter((a) => a.farmId === farmId);
+      if (filtered.length > 0) return filtered;
+      return INITIAL_LIVESTOCK.map((a) => ({ ...a, farmId }));
     } catch {
-      return INITIAL_LIVESTOCK;
+      return INITIAL_LIVESTOCK.map((a) => ({ ...a, farmId }));
     }
   }
 
@@ -148,9 +152,11 @@ class OfflineStorageManager {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.TASKS);
       const tasks: FarmTask[] = data ? JSON.parse(data) : INITIAL_TASKS;
-      return tasks.filter((t) => t.farmId === farmId);
+      const filtered = tasks.filter((t) => t.farmId === farmId);
+      if (filtered.length > 0) return filtered;
+      return INITIAL_TASKS.map((t) => ({ ...t, farmId }));
     } catch {
-      return INITIAL_TASKS;
+      return INITIAL_TASKS.map((t) => ({ ...t, farmId }));
     }
   }
 
@@ -181,9 +187,11 @@ class OfflineStorageManager {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.ALERTS);
       const alerts: AlertNotification[] = data ? JSON.parse(data) : INITIAL_ALERTS;
-      return alerts.filter((a) => a.farmId === farmId);
+      const filtered = alerts.filter((a) => a.farmId === farmId);
+      if (filtered.length > 0) return filtered;
+      return INITIAL_ALERTS.map((a) => ({ ...a, farmId }));
     } catch {
-      return INITIAL_ALERTS;
+      return INITIAL_ALERTS.map((a) => ({ ...a, farmId }));
     }
   }
 
@@ -200,9 +208,11 @@ class OfflineStorageManager {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.TIMELINE);
       const events: TimelineEvent[] = data ? JSON.parse(data) : INITIAL_TIMELINE;
-      return events.filter((e) => e.farmId === farmId);
+      const filtered = events.filter((e) => e.farmId === farmId);
+      if (filtered.length > 0) return filtered;
+      return INITIAL_TIMELINE.map((e) => ({ ...e, farmId }));
     } catch {
-      return INITIAL_TIMELINE;
+      return INITIAL_TIMELINE.map((e) => ({ ...e, farmId }));
     }
   }
 
@@ -219,9 +229,11 @@ class OfflineStorageManager {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.ADVISORIES);
       const list: AdvisoryItem[] = data ? JSON.parse(data) : INITIAL_ADVISORIES;
-      return list.filter((a) => a.farmId === farmId);
+      const filtered = list.filter((a) => a.farmId === farmId);
+      if (filtered.length > 0) return filtered;
+      return INITIAL_ADVISORIES.map((a) => ({ ...a, farmId }));
     } catch {
-      return INITIAL_ADVISORIES;
+      return INITIAL_ADVISORIES.map((a) => ({ ...a, farmId }));
     }
   }
 }

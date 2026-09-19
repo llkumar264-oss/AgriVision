@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UserCheck, HeartPulse, Plus, Syringe, Scale, Calendar, AlertTriangle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { 
+  UserCheck, Plus, Search, AlertCircle, CheckCircle2, 
+  Activity, Calendar, ShieldCheck, Heart, Sparkles, X, ChevronRight, Scale
+} from 'lucide-react';
 import { LivestockAnimal, AnimalType } from '@/types/schema';
 
 interface LivestockManagerProps {
@@ -15,160 +18,322 @@ export const LivestockManager: React.FC<LivestockManagerProps> = ({
   onAddAnimal,
   onOpenAssistant,
 }) => {
-  const [selectedType, setSelectedType] = useState<string>('All');
-  const [activeAnimal, setActiveAnimal] = useState<LivestockAnimal | null>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<LivestockAnimal | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedType, setSelectedType] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // New Animal Form state
-  const [tagNumber, setTagNumber] = useState('');
+  // Feed Calculator State
+  const [calcAnimalType, setCalcAnimalType] = useState<string>('Cow');
+  const [calcWeightKg, setCalcWeightKg] = useState<number>(450);
+  const [calcMilkYieldL, setCalcMilkYieldL] = useState<number>(15);
+
+  // Form State
+  const [tagNumber, setTagNumber] = useState('IND-RJ-105');
   const [type, setType] = useState<AnimalType>('Cow');
-  const [breed, setBreed] = useState('');
-  const [weightKg, setWeightKg] = useState(400);
+  const [breed, setBreed] = useState('Gir Pure Breed');
+  const [ageMonths, setAgeMonths] = useState(30);
+  const [weightKg, setWeightKg] = useState(440);
+  const [notes, setNotes] = useState('High milk yield producer, healthy condition.');
 
   const animalTypes = ['All', 'Cow', 'Buffalo', 'Goat', 'Sheep', 'Chicken'];
 
-  const filteredAnimals = selectedType === 'All'
-    ? livestock
-    : livestock.filter(a => a.type.toLowerCase() === selectedType.toLowerCase());
+  const filteredLivestock = livestock.filter(a => {
+    const matchesType = selectedType === 'All' || a.type === selectedType;
+    const matchesSearch = a.tagNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          a.breed.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          a.type.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
 
   const handleCreateAnimal = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tagNumber || !breed) return;
-
     const newAnimal: LivestockAnimal = {
       id: `animal-${Date.now()}`,
       farmId: 'farm-1',
       tagNumber,
       type,
       breed,
-      ageMonths: 24,
+      ageMonths,
       weightKg,
-      healthScore: 94,
+      healthScore: 95,
       riskLevel: 'low',
       lastVaccinationDate: new Date().toISOString().split('T')[0],
-      nextVaccinationDue: '2026-12-01',
+      nextVaccinationDue: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       lastCheckDate: new Date().toISOString().split('T')[0],
-      imageUrl: 'https://images.unsplash.com/photo-1546445317-29f4545f9d52?auto=format&fit=crop&w=600&q=80',
+      imageUrl: type === 'Cow' 
+        ? 'https://images.unsplash.com/photo-1546445317-29f4545f9d52?auto=format&fit=crop&w=600&q=80'
+        : type === 'Buffalo'
+        ? 'https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=600&q=80'
+        : type === 'Goat'
+        ? 'https://images.unsplash.com/photo-1524024973431-2ad916746881?auto=format&fit=crop&w=600&q=80'
+        : 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?auto=format&fit=crop&w=600&q=80',
+      notes,
     };
 
     onAddAnimal(newAnimal);
     setShowAddModal(false);
-    setTagNumber('');
-    setBreed('');
   };
 
+  // Ration Calculator Formula
+  const dryMatterKg = (calcWeightKg * 0.03).toFixed(1);
+  const greenFodderKg = Math.round(calcWeightKg * 0.05);
+  const dryFodderKg = Math.round(calcWeightKg * 0.02);
+  const concentrateKg = (1.5 + calcMilkYieldL * 0.4).toFixed(1);
+
   return (
-    <div className="space-y-6">
-      {/* Title Bar */}
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-xs">
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-main)]">Livestock Observation & Health</h1>
-          <p className="text-xs text-[var(--text-muted)]">Cattle, buffaloes, goats, sheep and poultry telemetry & AI visual observation</p>
+          <div className="flex items-center gap-2 text-emerald-600 text-xs font-bold uppercase tracking-wider mb-1">
+            <UserCheck className="h-4 w-4" /> Animal Husbandry &amp; Livestock Intelligence
+          </div>
+          <h1 className="text-xl font-extrabold text-[var(--text-main)]">Livestock Health &amp; Milk Yield Manager</h1>
+          <p className="text-xs text-[var(--text-muted)]">Track tag records, vaccination deadlines, daily yield &amp; feed rations</p>
         </div>
+
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 rounded-xl bg-[var(--primary-agri)] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[var(--primary-agri-hover)] transition"
+          className="flex items-center gap-2 rounded-xl bg-[var(--primary-agri)] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[var(--primary-agri-hover)] transition shrink-0"
         >
-          <Plus className="h-4 w-4" /> Add Animal Record
+          <Plus className="h-4 w-4" /> Register Animal
         </button>
       </div>
 
-      {/* Filter Chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {animalTypes.map(t => (
-          <button
-            key={t}
-            onClick={() => setSelectedType(t)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition shrink-0 ${
-              selectedType === t
-                ? 'bg-[var(--primary-agri)] text-white shadow-xs'
-                : 'bg-[var(--surface-card)] text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-[var(--text-main)]'
-            }`}
+      {/* RATION CALCULATOR SUMMARY BAR */}
+      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-extrabold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+            <Scale className="h-4 w-4 text-emerald-700" /> AI Livestock Daily Ration &amp; Feed Calculator
+          </h3>
+          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">Balanced Nutrition</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+          <div>
+            <label className="block text-[10px] font-bold text-emerald-900 mb-1">Animal Weight (kg)</label>
+            <input
+              type="number"
+              value={calcWeightKg}
+              onChange={(e) => setCalcWeightKg(Number(e.target.value))}
+              className="w-full rounded-xl border border-emerald-300 bg-white px-3 py-1.5 text-xs font-bold text-emerald-900"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-emerald-900 mb-1">Daily Milk (Liters)</label>
+            <input
+              type="number"
+              value={calcMilkYieldL}
+              onChange={(e) => setCalcMilkYieldL(Number(e.target.value))}
+              className="w-full rounded-xl border border-emerald-300 bg-white px-3 py-1.5 text-xs font-bold text-emerald-900"
+            />
+          </div>
+
+          <div className="col-span-2 rounded-xl bg-white p-3 border border-emerald-200 flex items-center justify-between text-xs">
+            <div>
+              <span className="text-[10px] text-emerald-700 block font-semibold">Recommended Daily Ration</span>
+              <p className="font-extrabold text-emerald-900 mt-0.5">
+                Green Fodder: {greenFodderKg}kg • Dry Fodder: {dryFodderKg}kg • Concentrate: {concentrateKg}kg
+              </p>
+            </div>
+            <button
+              onClick={() => onOpenAssistant(`How can I optimize cattle feed ration for a ${calcWeightKg}kg animal producing ${calcMilkYieldL}L milk daily?`)}
+              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 transition shrink-0 ml-2"
+            >
+              Feed Advice
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Tabs & Search */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {animalTypes.map((t) => (
+            <button
+              key={t}
+              onClick={() => setSelectedType(t)}
+              className={`rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap transition-all ${
+                selectedType === t
+                  ? 'bg-[var(--primary-agri)] text-white shadow-xs'
+                  : 'bg-[var(--surface-card)] text-[var(--text-muted)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)]'
+              }`}
+            >
+              {t}s
+            </button>
+          ))}
+        </div>
+
+        <div className="relative w-full md:w-72 shrink-0">
+          <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-[var(--text-muted)]" />
+          <input
+            type="text"
+            placeholder="Search by tag #, breed, type..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] pl-9 pr-3 py-2 text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+          />
+        </div>
+      </div>
+
+      {/* Animal Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredLivestock.map((animal) => (
+          <div
+            key={animal.id}
+            onClick={() => setSelectedAnimal(animal)}
+            className="group relative flex flex-col justify-between rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-xs hover:border-[var(--border-strong)] hover:shadow-md cursor-pointer transition duration-200"
           >
-            {t}
-          </button>
+            <div className="space-y-3">
+              {/* Image & Badges */}
+              <div className="relative h-44 w-full rounded-xl overflow-hidden bg-[var(--bg-app)]">
+                <img
+                  src={animal.imageUrl || 'https://images.unsplash.com/photo-1546445317-29f4545f9d52?auto=format&fit=crop&w=600&q=80'}
+                  alt={animal.tagNumber}
+                  className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                />
+                <div className="absolute top-2 left-2 flex gap-1">
+                  <span className="rounded-lg bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
+                    Tag: {animal.tagNumber}
+                  </span>
+                  <span className="rounded-lg bg-emerald-600/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
+                    {animal.type}
+                  </span>
+                </div>
+
+                <span className={`absolute bottom-2 right-2 rounded-lg px-2.5 py-0.5 text-[10px] font-extrabold backdrop-blur-xs shadow-xs ${
+                  animal.riskLevel === 'medium' || animal.riskLevel === 'high'
+                    ? 'bg-amber-500/90 text-white'
+                    : 'bg-emerald-600/90 text-white'
+                }`}>
+                  Health {animal.healthScore}/100
+                </span>
+              </div>
+
+              {/* Title & Notes */}
+              <div>
+                <h3 className="text-sm font-extrabold text-[var(--text-main)] group-hover:text-[var(--primary-agri)] transition">
+                  {animal.breed}
+                </h3>
+                <p className="text-xs text-[var(--text-muted)] line-clamp-2 mt-1 font-medium">
+                  {animal.notes}
+                </p>
+              </div>
+
+              {/* Weight & Age Grid */}
+              <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                <div className="rounded-lg bg-[var(--bg-app)] p-2 border border-[var(--border-subtle)]">
+                  <span className="text-[var(--text-muted)] block font-medium">Weight</span>
+                  <strong className="text-[var(--text-main)] font-bold">{animal.weightKg} kg</strong>
+                </div>
+                <div className="rounded-lg bg-[var(--bg-app)] p-2 border border-[var(--border-subtle)]">
+                  <span className="text-[var(--text-muted)] block font-medium">Vaccination Due</span>
+                  <strong className="text-amber-700 font-bold">{animal.nextVaccinationDue}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
+              <span className="text-[var(--text-muted)]">Age: <strong className="text-[var(--text-main)]">{animal.ageMonths} months</strong></span>
+              <span className="text-[var(--primary-agri)] font-bold flex items-center gap-0.5 group-hover:translate-x-1 transition">
+                Full Profile <ChevronRight className="h-3.5 w-3.5" />
+              </span>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Livestock Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {filteredAnimals.map((animal) => {
-          const isVaccineDueSoon = new Date(animal.nextVaccinationDue) <= new Date('2026-08-25');
-          return (
-            <div
-              key={animal.id}
-              onClick={() => setActiveAnimal(animal)}
-              className="group relative flex flex-col justify-between rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-xs hover:border-[var(--border-strong)] hover:shadow-md cursor-pointer transition"
-            >
+      {/* Animal Detail Modal */}
+      {selectedAnimal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b border-[var(--border-subtle)] pb-3">
               <div>
-                <div className="relative h-40 w-full rounded-xl overflow-hidden mb-3 bg-[var(--bg-app)]">
-                  <img
-                    src={animal.imageUrl || 'https://images.unsplash.com/photo-1546445317-29f4545f9d52?auto=format&fit=crop&w=600&q=80'}
-                    alt={animal.tagNumber}
-                    className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                  <span className="absolute top-2 left-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
-                    Tag: {animal.tagNumber}
-                  </span>
-                  <span className="absolute top-2 right-2 rounded-full bg-white/90 dark:bg-black/80 px-2 py-0.5 text-[10px] font-extrabold text-[var(--primary-agri)] tabular-nums shadow-xs">
-                    {animal.healthScore}% Health
-                  </span>
-                </div>
+                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Livestock Digital Tag # {selectedAnimal.tagNumber}</span>
+                <h2 className="text-lg font-extrabold text-[var(--text-main)]">{selectedAnimal.breed} ({selectedAnimal.type})</h2>
+              </div>
+              <button onClick={() => setSelectedAnimal(null)} className="rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-hover)]">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm text-[var(--text-main)]">{animal.type} ({animal.breed})</h3>
-                  <span className="text-xs font-semibold text-[var(--text-muted)] tabular-nums">{animal.weightKg} kg</span>
-                </div>
+            <div className="h-48 w-full rounded-2xl overflow-hidden bg-[var(--bg-app)]">
+              <img src={selectedAnimal.imageUrl} alt={selectedAnimal.tagNumber} className="h-full w-full object-cover" />
+            </div>
 
-                <div className="mt-2 space-y-1 text-xs text-[var(--text-muted)]">
-                  <div className="flex justify-between">
-                    <span>Age:</span>
-                    <span className="font-medium text-[var(--text-main)]">{animal.ageMonths} Months</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Next Vaccine:</span>
-                    <span className={`font-medium ${isVaccineDueSoon ? 'text-[var(--warning-amber)] font-bold' : 'text-[var(--text-main)]'}`}>
-                      {animal.nextVaccinationDue}
-                    </span>
-                  </div>
-                </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
+                <span className="text-[var(--text-muted)] font-medium">Health Index</span>
+                <p className="text-base font-extrabold text-emerald-700 mt-0.5">{selectedAnimal.healthScore} / 100</p>
               </div>
 
-              {isVaccineDueSoon && (
-                <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-[var(--warning-bg)] p-2 text-[10px] font-bold text-[var(--warning-amber)]">
-                  <Syringe className="h-3.5 w-3.5 shrink-0" /> Vaccination Due Soon
-                </div>
-              )}
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
+                <span className="text-[var(--text-muted)] font-medium">Weight</span>
+                <p className="text-base font-extrabold text-[var(--text-main)] mt-0.5">{selectedAnimal.weightKg} kg</p>
+              </div>
+
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
+                <span className="text-[var(--text-muted)] font-medium">Last Vaccination</span>
+                <p className="text-xs font-bold text-[var(--text-main)] mt-0.5">{selectedAnimal.lastVaccinationDate}</p>
+              </div>
+
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
+                <span className="text-[var(--text-muted)] font-medium">Next Booster Due</span>
+                <p className="text-xs font-bold text-amber-700 mt-0.5">{selectedAnimal.nextVaccinationDue}</p>
+              </div>
             </div>
-          );
-        })}
-      </div>
+
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3 text-xs space-y-1">
+              <span className="text-[var(--text-muted)] font-bold block">Notes &amp; Observations:</span>
+              <p className="text-[var(--text-main)] font-medium">{selectedAnimal.notes}</p>
+            </div>
+
+            <button
+              onClick={() => {
+                onOpenAssistant(`What is the recommended vaccination and health check protocol for a ${selectedAnimal.breed} ${selectedAnimal.type}?`);
+                setSelectedAnimal(null);
+              }}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[var(--primary-agri)] py-3 text-xs font-bold text-white shadow-xs hover:bg-[var(--primary-agri-hover)] transition"
+            >
+              <Sparkles className="h-4 w-4" /> Ask AI Vet Advisor for Health Protocol
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add Animal Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-2xl animate-fade-in">
-            <h3 className="text-base font-bold text-[var(--text-main)] mb-4">Add Livestock Animal Record</h3>
-            <form onSubmit={handleCreateAnimal} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-[var(--text-main)] mb-1">Tag Number</label>
-                <input
-                  type="text"
-                  placeholder="e.g. IND-RJ-505"
-                  value={tagNumber}
-                  onChange={(e) => setTagNumber(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
-                  required
-                />
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+              <h2 className="text-base font-bold text-[var(--text-main)]">Register New Animal Tag</h2>
+              <button onClick={() => setShowAddModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text-main)]">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
+            <form onSubmit={handleCreateAnimal} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-[var(--text-main)] mb-1">Animal Type</label>
+                  <label className="block font-bold text-[var(--text-main)] mb-1">Tag Number</label>
+                  <input
+                    type="text"
+                    value={tagNumber}
+                    onChange={(e) => setTagNumber(e.target.value)}
+                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[var(--text-main)] mb-1">Animal Type</label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as AnimalType)}
-                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
                   >
                     <option value="Cow">Cow</option>
                     <option value="Buffalo">Buffalo</option>
@@ -177,44 +342,60 @@ export const LivestockManager: React.FC<LivestockManagerProps> = ({
                     <option value="Chicken">Chicken</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[var(--text-main)] mb-1">Breed Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Sahiwal, Murrah, Barbari..."
+                  value={breed}
+                  onChange={(e) => setBreed(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-[var(--text-main)] mb-1">Breed Name</label>
+                  <label className="block font-bold text-[var(--text-main)] mb-1">Age (Months)</label>
                   <input
-                    type="text"
-                    placeholder="e.g. Gir / Sahiwal"
-                    value={breed}
-                    onChange={(e) => setBreed(e.target.value)}
-                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                    type="number"
+                    value={ageMonths}
+                    onChange={(e) => setAgeMonths(Number(e.target.value))}
+                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[var(--text-main)] mb-1">Weight (kg)</label>
+                  <input
+                    type="number"
+                    value={weightKg}
+                    onChange={(e) => setWeightKg(Number(e.target.value))}
+                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-[var(--text-main)] mb-1">Weight (kg)</label>
+                <label className="block font-bold text-[var(--text-main)] mb-1">Notes / Milk Yield</label>
                 <input
-                  type="number"
-                  value={weightKg}
-                  onChange={(e) => setWeightKg(Number(e.target.value))}
-                  className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
                 />
               </div>
 
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="w-1/2 rounded-xl border border-[var(--border-subtle)] py-2.5 font-semibold text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="w-1/2 rounded-xl bg-[var(--primary-agri)] py-2.5 font-semibold text-white hover:bg-[var(--primary-agri-hover)]"
-                >
-                  Save Record
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-[var(--primary-agri)] py-3 text-xs font-bold text-white shadow-md hover:bg-[var(--primary-agri-hover)] transition"
+              >
+                Register Animal Profile
+              </button>
             </form>
           </div>
         </div>

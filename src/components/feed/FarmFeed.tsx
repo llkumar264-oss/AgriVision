@@ -2,37 +2,27 @@
 
 import React, { useState } from 'react';
 import { 
-  Heart, MessageCircle, Bookmark, Share2, Sparkles, 
-  CheckSquare, History, Plus, Filter, UserCheck, Sprout
+  Rss, ThumbsUp, MessageSquare, Sparkles, Plus, CheckCircle2, AlertTriangle, Share2
 } from 'lucide-react';
 import { FarmFeedPost } from '@/types/schema';
 import { INITIAL_FEED } from '@/lib/mock-data';
 
 interface FarmFeedProps {
-  onAddTask: (title: string, desc: string) => void;
+  onAddTask: (title: string, description: string) => void;
   onOpenAssistant: (query: string) => void;
 }
 
 export const FarmFeed: React.FC<FarmFeedProps> = ({ onAddTask, onOpenAssistant }) => {
-  const [posts, setPosts] = useState<FarmFeedPost[]>(INITIAL_FEED);
-  const [activeFilter, setActiveFilter] = useState<string>('All');
-  const [newPostText, setNewPostText] = useState('');
-  const [showNewPostModal, setShowNewPostModal] = useState(false);
-
-  const filters = ['All', 'Crops', 'Livestock', 'Diseases', 'Treatments', 'Observations'];
-
-  const filteredPosts = activeFilter === 'All' 
-    ? posts 
-    : posts.filter(p => p.category.toLowerCase() === activeFilter.toLowerCase());
+  const [feedPosts, setFeedPosts] = useState<FarmFeedPost[]>(INITIAL_FEED);
 
   const handleLike = (id: string) => {
-    setPosts(prev => prev.map(p => {
+    setFeedPosts(prev => prev.map(p => {
       if (p.id === id) {
-        const liked = !p.userLiked;
+        const userLiked = !p.userLiked;
         return {
           ...p,
-          userLiked: liked,
-          likesCount: liked ? p.likesCount + 1 : p.likesCount - 1,
+          userLiked,
+          likesCount: userLiked ? p.likesCount + 1 : p.likesCount - 1
         };
       }
       return p;
@@ -40,128 +30,85 @@ export const FarmFeed: React.FC<FarmFeedProps> = ({ onAddTask, onOpenAssistant }
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Header & Create Button */}
-      <div className="flex items-center justify-between rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-xs">
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-xs">
         <div>
-          <h1 className="text-lg font-bold text-[var(--text-main)]">Farm Activity Feed</h1>
-          <p className="text-xs text-[var(--text-muted)]">Visual observations, AI diagnostic captures & farm updates</p>
+          <div className="flex items-center gap-2 text-emerald-600 text-xs font-bold uppercase tracking-wider mb-1">
+            <Rss className="h-4 w-4" /> Live Crop &amp; Livestock Intelligence Feed
+          </div>
+          <h1 className="text-xl font-extrabold text-[var(--text-main)]">Multicrop Farm Activity Feed</h1>
+          <p className="text-xs text-[var(--text-muted)]">Real-time agricultural scans, disease diagnosis &amp; high-yield success stories across 35+ crops</p>
         </div>
-        <button
-          onClick={() => setShowNewPostModal(true)}
-          className="flex items-center gap-2 rounded-xl bg-[var(--primary-agri)] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[var(--primary-agri-hover)] transition"
-        >
-          <Plus className="h-4 w-4" /> Share Observation
-        </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {filters.map((f) => (
-          <button
-            key={f}
-            onClick={() => setActiveFilter(f)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition shrink-0 ${
-              activeFilter === f
-                ? 'bg-[var(--primary-agri)] text-white shadow-xs'
-                : 'bg-[var(--surface-card)] text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-[var(--text-main)]'
-            }`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
-
-      {/* Posts List */}
-      <div className="space-y-6">
-        {filteredPosts.map((post) => (
-          <article
-            key={post.id}
-            className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-xs overflow-hidden transition hover:border-[var(--border-strong)]"
-          >
-            {/* Post Author Header */}
-            <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)]">
+      {/* Feed Cards */}
+      <div className="space-y-5 max-w-2xl">
+        {feedPosts.map((post) => (
+          <div key={post.id} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-xs space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img
-                  src={post.farmerAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80'}
-                  alt={post.farmerName}
-                  className="h-9 w-9 rounded-full object-cover border border-[var(--border-subtle)]"
-                />
+                <img src={post.farmerAvatar} alt={post.farmerName} className="h-10 w-10 rounded-full object-cover border border-emerald-200" />
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs text-[var(--text-main)]">{post.farmerName}</span>
-                    <span className="rounded bg-[var(--primary-agri-light)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--primary-agri)]">
-                      {post.category}
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-[var(--text-muted)]">{post.farmName} • {post.timestamp}</span>
-                </div>
-              </div>
-              <span className="text-xs font-semibold text-[var(--text-muted)]">{post.targetName}</span>
-            </div>
-
-            {/* Post Image */}
-            <div className="relative w-full h-80 sm:h-96 bg-black/90">
-              <img src={post.imageUrl} alt={post.targetName} className="w-full h-full object-cover" />
-              
-              {/* AI Overlay Badge if exists */}
-              {post.aiAnalysis && (
-                <div className="absolute bottom-3 left-3 right-3 rounded-xl bg-black/70 p-3 backdrop-blur-md text-white flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold text-emerald-400 block uppercase">AI Pathology Result</span>
-                    <span className="font-bold text-xs">{post.aiAnalysis.condition}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-zinc-300 block">Confidence</span>
-                    <span className="font-extrabold text-xs text-emerald-300 tabular-nums">{post.aiAnalysis.confidence}%</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Post Content & Actions */}
-            <div className="p-4 space-y-3">
-              {/* Interaction Bar */}
-              <div className="flex items-center justify-between text-xs border-b border-[var(--border-subtle)] pb-3">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => handleLike(post.id)}
-                    className={`flex items-center gap-1.5 font-medium transition ${
-                      post.userLiked ? 'text-red-500' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                    }`}
-                  >
-                    <Heart className={`h-4 w-4 ${post.userLiked ? 'fill-red-500' : ''}`} />
-                    <span className="tabular-nums">{post.likesCount}</span>
-                  </button>
-                  <button className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] font-medium">
-                    <MessageCircle className="h-4 w-4" />
-                    <span className="tabular-nums">{post.commentsCount}</span>
-                  </button>
-                  <button className="text-[var(--text-muted)] hover:text-[var(--text-main)]">
-                    <Share2 className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => onAddTask(`Inspect ${post.targetName}`, post.description)}
-                    className="flex items-center gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-app)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-main)] hover:bg-[var(--surface-hover)]"
-                  >
-                    <CheckSquare className="h-3 w-3" /> Create Task
-                  </button>
-                  <button
-                    onClick={() => onOpenAssistant(`Explain AI analysis for ${post.targetName}`)}
-                    className="flex items-center gap-1 rounded-lg border border-[var(--primary-agri)]/30 bg-[var(--primary-agri-light)] px-2.5 py-1 text-[11px] font-semibold text-[var(--primary-agri)]"
-                  >
-                    <Sparkles className="h-3 w-3" /> Ask AI
-                  </button>
+                  <h3 className="text-xs font-bold text-[var(--text-main)]">{post.farmerName}</h3>
+                  <span className="text-[10px] text-[var(--text-muted)]">{post.farmName} • {post.timestamp}</span>
                 </div>
               </div>
 
-              {/* Description */}
-              <p className="text-xs text-[var(--text-main)] leading-relaxed">{post.description}</p>
+              <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-100">
+                {post.category}
+              </span>
             </div>
-          </article>
+
+            {/* Title & Description */}
+            <div className="space-y-1">
+              <h2 className="text-sm font-extrabold text-[var(--text-main)]">{post.targetName}</h2>
+              <p className="text-xs text-[var(--text-main)]/90 leading-relaxed">{post.description}</p>
+            </div>
+
+            {/* AI Analysis Box */}
+            {post.aiAnalysis && (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs space-y-1">
+                <div className="flex items-center justify-between font-bold text-amber-900">
+                  <span className="flex items-center gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600" /> AI Scan Finding: {post.aiAnalysis.condition}
+                  </span>
+                  <span>{post.aiAnalysis.confidence}% Match</span>
+                </div>
+                <p className="text-[11px] text-amber-800">Severity: {post.aiAnalysis.severity}. Immediate bio-fungicide treatment recommended.</p>
+              </div>
+            )}
+
+            {/* Image */}
+            <div className="h-64 w-full rounded-xl overflow-hidden bg-[var(--bg-app)]">
+              <img src={post.imageUrl} alt={post.targetName} className="h-full w-full object-cover" />
+            </div>
+
+            {/* Interaction Bar */}
+            <div className="flex items-center justify-between pt-3 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)]">
+              <button
+                onClick={() => handleLike(post.id)}
+                className={`flex items-center gap-1.5 font-bold transition ${post.userLiked ? 'text-emerald-700' : 'hover:text-[var(--text-main)]'}`}
+              >
+                <ThumbsUp className={`h-4 w-4 ${post.userLiked ? 'fill-emerald-600 text-emerald-700' : ''}`} />
+                <span>{post.likesCount} Likes</span>
+              </button>
+
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <MessageSquare className="h-4 w-4 text-gray-500" /> {post.commentsCount} Comments
+                </span>
+
+                <button
+                  onClick={() => onOpenAssistant(`How should I treat ${post.targetName} based on this feed finding: ${post.description}?`)}
+                  className="flex items-center gap-1 text-emerald-700 font-bold hover:underline"
+                >
+                  <Sparkles className="h-3.5 w-3.5" /> Consult AI
+                </button>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>
