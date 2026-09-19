@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { 
   UserCheck, Plus, Search, AlertCircle, CheckCircle2, 
-  Activity, Calendar, ShieldCheck, Heart, Sparkles, X, ChevronRight, Scale
+  Activity, Calendar, ShieldCheck, Heart, Sparkles, X, ChevronRight, Scale, Milk, Stethoscope, Droplet
 } from 'lucide-react';
 import { LivestockAnimal, AnimalType } from '@/types/schema';
 
@@ -22,9 +22,9 @@ export const LivestockManager: React.FC<LivestockManagerProps> = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedType, setSelectedType] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [profileTab, setProfileTab] = useState<'overview' | 'health' | 'production' | 'nutrition'>('overview');
 
   // Feed Calculator State
-  const [calcAnimalType, setCalcAnimalType] = useState<string>('Cow');
   const [calcWeightKg, setCalcWeightKg] = useState<number>(450);
   const [calcMilkYieldL, setCalcMilkYieldL] = useState<number>(15);
 
@@ -76,7 +76,6 @@ export const LivestockManager: React.FC<LivestockManagerProps> = ({
   };
 
   // Ration Calculator Formula
-  const dryMatterKg = (calcWeightKg * 0.03).toFixed(1);
   const greenFodderKg = Math.round(calcWeightKg * 0.05);
   const dryFodderKg = Math.round(calcWeightKg * 0.02);
   const concentrateKg = (1.5 + calcMilkYieldL * 0.4).toFixed(1);
@@ -89,8 +88,8 @@ export const LivestockManager: React.FC<LivestockManagerProps> = ({
           <div className="flex items-center gap-2 text-emerald-600 text-xs font-bold uppercase tracking-wider mb-1">
             <UserCheck className="h-4 w-4" /> Animal Husbandry &amp; Livestock Intelligence
           </div>
-          <h1 className="text-xl font-extrabold text-[var(--text-main)]">Livestock Health &amp; Milk Yield Manager</h1>
-          <p className="text-xs text-[var(--text-muted)]">Track tag records, vaccination deadlines, daily yield &amp; feed rations</p>
+          <h1 className="text-xl font-extrabold text-[var(--text-main)]">Livestock Digital Tag &amp; Health Hub</h1>
+          <p className="text-xs text-[var(--text-muted)]">Comprehensive animal profiles, milk yield history, vaccination logs &amp; nutrition plans</p>
         </div>
 
         <button
@@ -183,7 +182,7 @@ export const LivestockManager: React.FC<LivestockManagerProps> = ({
         {filteredLivestock.map((animal) => (
           <div
             key={animal.id}
-            onClick={() => setSelectedAnimal(animal)}
+            onClick={() => { setSelectedAnimal(animal); setProfileTab('overview'); }}
             className="group relative flex flex-col justify-between rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-xs hover:border-[var(--border-strong)] hover:shadow-md cursor-pointer transition duration-200"
           >
             <div className="space-y-3">
@@ -222,14 +221,14 @@ export const LivestockManager: React.FC<LivestockManagerProps> = ({
                 </p>
               </div>
 
-              {/* Weight & Age Grid */}
+              {/* Weight & Vaccination Grid */}
               <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                 <div className="rounded-lg bg-[var(--bg-app)] p-2 border border-[var(--border-subtle)]">
                   <span className="text-[var(--text-muted)] block font-medium">Weight</span>
                   <strong className="text-[var(--text-main)] font-bold">{animal.weightKg} kg</strong>
                 </div>
                 <div className="rounded-lg bg-[var(--bg-app)] p-2 border border-[var(--border-subtle)]">
-                  <span className="text-[var(--text-muted)] block font-medium">Vaccination Due</span>
+                  <span className="text-[var(--text-muted)] block font-medium">Booster Due</span>
                   <strong className="text-amber-700 font-bold">{animal.nextVaccinationDue}</strong>
                 </div>
               </div>
@@ -239,66 +238,184 @@ export const LivestockManager: React.FC<LivestockManagerProps> = ({
             <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
               <span className="text-[var(--text-muted)]">Age: <strong className="text-[var(--text-main)]">{animal.ageMonths} months</strong></span>
               <span className="text-[var(--primary-agri)] font-bold flex items-center gap-0.5 group-hover:translate-x-1 transition">
-                Full Profile <ChevronRight className="h-3.5 w-3.5" />
+                View Deep Profile <ChevronRight className="h-3.5 w-3.5" />
               </span>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Animal Detail Modal */}
+      {/* ── STUNNING ANIMAL PROFILE MODAL ────────────────────────────────────── */}
       {selectedAnimal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-3xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            {/* Header Banner */}
             <div className="flex items-start justify-between border-b border-[var(--border-subtle)] pb-3">
-              <div>
-                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Livestock Digital Tag # {selectedAnimal.tagNumber}</span>
-                <h2 className="text-lg font-extrabold text-[var(--text-main)]">{selectedAnimal.breed} ({selectedAnimal.type})</h2>
+              <div className="flex items-center gap-3">
+                <img src={selectedAnimal.imageUrl} alt={selectedAnimal.tagNumber} className="h-14 w-14 rounded-2xl object-cover border border-emerald-300" />
+                <div>
+                  <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider">Digital Animal Passport #{selectedAnimal.tagNumber}</span>
+                  <h2 className="text-lg font-extrabold text-[var(--text-main)]">{selectedAnimal.breed} ({selectedAnimal.type})</h2>
+                  <p className="text-xs text-[var(--text-muted)]">Registered on Rajasthan Green Fields • Age: {selectedAnimal.ageMonths} Months</p>
+                </div>
               </div>
               <button onClick={() => setSelectedAnimal(null)} className="rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-hover)]">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="h-48 w-full rounded-2xl overflow-hidden bg-[var(--bg-app)]">
-              <img src={selectedAnimal.imageUrl} alt={selectedAnimal.tagNumber} className="h-full w-full object-cover" />
+            {/* Profile Navigation Tabs */}
+            <div className="flex items-center gap-1.5 border-b border-[var(--border-subtle)] pb-2 overflow-x-auto">
+              <button
+                onClick={() => setProfileTab('overview')}
+                className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                  profileTab === 'overview' ? 'bg-[var(--primary-agri)] text-white shadow-xs' : 'text-[var(--text-muted)] hover:bg-[var(--surface-hover)]'
+                }`}
+              >
+                Overview &amp; Tag
+              </button>
+
+              <button
+                onClick={() => setProfileTab('health')}
+                className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                  profileTab === 'health' ? 'bg-[var(--primary-agri)] text-white shadow-xs' : 'text-[var(--text-muted)] hover:bg-[var(--surface-hover)]'
+                }`}
+              >
+                Vet &amp; Vaccines
+              </button>
+
+              <button
+                onClick={() => setProfileTab('production')}
+                className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                  profileTab === 'production' ? 'bg-[var(--primary-agri)] text-white shadow-xs' : 'text-[var(--text-muted)] hover:bg-[var(--surface-hover)]'
+                }`}
+              >
+                Milk Yield &amp; Fat Log
+              </button>
+
+              <button
+                onClick={() => setProfileTab('nutrition')}
+                className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                  profileTab === 'nutrition' ? 'bg-[var(--primary-agri)] text-white shadow-xs' : 'text-[var(--text-muted)] hover:bg-[var(--surface-hover)]'
+                }`}
+              >
+                Feed Protocol
+              </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
-                <span className="text-[var(--text-muted)] font-medium">Health Index</span>
-                <p className="text-base font-extrabold text-emerald-700 mt-0.5">{selectedAnimal.healthScore} / 100</p>
-              </div>
+            {/* Tab 1: Overview */}
+            {profileTab === 'overview' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
+                    <span className="text-[10px] text-[var(--text-muted)] font-medium block">Health Score</span>
+                    <span className="text-base font-extrabold text-emerald-700">{selectedAnimal.healthScore} / 100</span>
+                  </div>
 
-              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
-                <span className="text-[var(--text-muted)] font-medium">Weight</span>
-                <p className="text-base font-extrabold text-[var(--text-main)] mt-0.5">{selectedAnimal.weightKg} kg</p>
-              </div>
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
+                    <span className="text-[10px] text-[var(--text-muted)] font-medium block">Weight</span>
+                    <span className="text-base font-extrabold text-[var(--text-main)]">{selectedAnimal.weightKg} kg</span>
+                  </div>
 
-              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
-                <span className="text-[var(--text-muted)] font-medium">Last Vaccination</span>
-                <p className="text-xs font-bold text-[var(--text-main)] mt-0.5">{selectedAnimal.lastVaccinationDate}</p>
-              </div>
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
+                    <span className="text-[10px] text-[var(--text-muted)] font-medium block">Lactation Stage</span>
+                    <span className="text-xs font-extrabold text-emerald-800">Peak (Lactation 2)</span>
+                  </div>
 
-              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
-                <span className="text-[var(--text-muted)] font-medium">Next Booster Due</span>
-                <p className="text-xs font-bold text-amber-700 mt-0.5">{selectedAnimal.nextVaccinationDue}</p>
-              </div>
-            </div>
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3">
+                    <span className="text-[10px] text-[var(--text-muted)] font-medium block">Risk Level</span>
+                    <span className="text-xs font-extrabold uppercase text-emerald-700">{selectedAnimal.riskLevel}</span>
+                  </div>
+                </div>
 
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3 text-xs space-y-1">
-              <span className="text-[var(--text-muted)] font-bold block">Notes &amp; Observations:</span>
-              <p className="text-[var(--text-main)] font-medium">{selectedAnimal.notes}</p>
-            </div>
+                <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 space-y-2 text-xs">
+                  <h3 className="font-bold text-[var(--text-main)] uppercase tracking-wider text-[11px]">Agronomist Notes &amp; Temperament</h3>
+                  <p className="text-[var(--text-main)] leading-relaxed">{selectedAnimal.notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Health & Vet */}
+            {profileTab === 'health' && (
+              <div className="space-y-4 text-xs">
+                <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-4 space-y-3">
+                  <h3 className="font-bold text-[var(--text-main)] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Stethoscope className="h-4 w-4 text-emerald-600" /> Mandatory Vaccination Schedule
+                  </h3>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[var(--border-subtle)]">
+                      <div>
+                        <strong className="block text-[var(--text-main)]">FMD (Foot &amp; Mouth Disease Booster)</strong>
+                        <span className="text-[10px] text-[var(--text-muted)]">Administered: {selectedAnimal.lastVaccinationDate}</span>
+                      </div>
+                      <span className="rounded-lg bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800">
+                        Due: {selectedAnimal.nextVaccinationDue}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[var(--border-subtle)]">
+                      <div>
+                        <strong className="block text-[var(--text-main)]">HS (Hemorrhagic Septicemia Vaccine)</strong>
+                        <span className="text-[10px] text-[var(--text-muted)]">Administered: 2026-03-10</span>
+                      </div>
+                      <span className="rounded-lg bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">
+                        Protected
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 3: Production */}
+            {profileTab === 'production' && (
+              <div className="space-y-4 text-xs">
+                <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-4 space-y-3">
+                  <h3 className="font-bold text-[var(--text-main)] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Milk className="h-4 w-4 text-emerald-600" /> 7-Day Daily Milk Production &amp; Fat % Log
+                  </h3>
+
+                  <div className="grid grid-cols-7 gap-2 text-center">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => (
+                      <div key={day} className="rounded-xl bg-white p-2 border border-[var(--border-subtle)]">
+                        <span className="text-[9px] text-[var(--text-muted)] block">{day}</span>
+                        <strong className="text-xs font-bold text-emerald-800">{(14.5 + idx * 0.4).toFixed(1)}L</strong>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-between pt-2 text-[11px] text-[var(--text-muted)]">
+                    <span>Average Daily Milk: <strong className="text-[var(--text-main)]">15.8 L/day</strong></span>
+                    <span>Milk Fat Content: <strong className="text-emerald-700 font-bold">7.6% (Premium)</strong></span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 4: Nutrition */}
+            {profileTab === 'nutrition' && (
+              <div className="space-y-4 text-xs">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-2">
+                  <h3 className="font-bold text-emerald-950 uppercase tracking-wider text-[11px]">Personalized Daily Ration Chart</h3>
+                  <ul className="space-y-1.5 text-emerald-900">
+                    <li>• Green Fodder (Berseem/Lucerne): <strong>22 kg/day</strong></li>
+                    <li>• Dry Straw (Wheat Bhusa): <strong>8 kg/day</strong></li>
+                    <li>• Balanced Concentrate Mash: <strong>6.5 kg/day</strong></li>
+                    <li>• Mineral Mixture + Salt: <strong>50g daily</strong></li>
+                  </ul>
+                </div>
+              </div>
+            )}
 
             <button
               onClick={() => {
-                onOpenAssistant(`What is the recommended vaccination and health check protocol for a ${selectedAnimal.breed} ${selectedAnimal.type}?`);
+                onOpenAssistant(`What is the recommended health check protocol for ${selectedAnimal.breed} (${selectedAnimal.tagNumber})?`);
                 setSelectedAnimal(null);
               }}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-[var(--primary-agri)] py-3 text-xs font-bold text-white shadow-xs hover:bg-[var(--primary-agri-hover)] transition"
             >
-              <Sparkles className="h-4 w-4" /> Ask AI Vet Advisor for Health Protocol
+              <Sparkles className="h-4 w-4" /> Ask AI Vet Specialist
             </button>
           </div>
         </div>

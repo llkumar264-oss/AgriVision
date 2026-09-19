@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { 
   ShoppingBag, Search, Tag, Star, MapPin, DollarSign, 
   MessageSquare, CheckCircle2, ShieldAlert, Sparkles, Filter, 
-  ArrowRight, X, TrendingDown, RefreshCw, Layers
+  ArrowRight, X, TrendingDown, RefreshCw, Layers, Plus, Store
 } from 'lucide-react';
 import { MarketplaceItem, MarketCategory, BargainOffer } from '@/types/schema';
 import { INITIAL_MARKETPLACE_ITEMS } from '@/lib/mock-data';
@@ -26,7 +26,16 @@ export const Marketplace: React.FC<MarketplaceProps> = ({ onOpenAssistant }) => 
   const [chatMessages, setChatMessages] = useState<{ sender: 'user' | 'seller'; text: string; price?: number }[]>([]);
   const [orderSuccessMsg, setOrderSuccessMsg] = useState<string>('');
 
-  const categories = ['All', 'Seeds', 'Fertilizers', 'Protection', 'Machinery', 'Livestock', 'Feed'];
+  // Sell Item Modal State
+  const [showSellModal, setShowSellModal] = useState<boolean>(false);
+  const [sellTitle, setSellTitle] = useState('');
+  const [sellCategory, setSellCategory] = useState<MarketCategory>('Harvested Crops');
+  const [sellPrice, setSellPrice] = useState<number>(2450);
+  const [sellUnit, setSellUnit] = useState('Quintal (100kg)');
+  const [sellLocation, setSellLocation] = useState('Jaipur Mandi, Rajasthan');
+  const [sellDescription, setSellDescription] = useState('Freshly harvested A-Grade organic crop. Ready for immediate loading.');
+
+  const categories = ['All', 'Harvested Crops', 'Seeds', 'Fertilizers', 'Protection', 'Machinery', 'Livestock', 'Feed'];
 
   const filteredItems = items.filter(item => {
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
@@ -107,28 +116,67 @@ export const Marketplace: React.FC<MarketplaceProps> = ({ onOpenAssistant }) => 
     setTimeout(() => setOrderSuccessMsg(''), 5000);
   };
 
+  const handleListProductForSale = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sellTitle) return;
+
+    const newItem: MarketplaceItem = {
+      id: `mkt-custom-${Date.now()}`,
+      title: sellTitle,
+      category: sellCategory,
+      price: sellPrice,
+      originalPrice: Math.round(sellPrice * 1.15),
+      unit: sellUnit,
+      sellerName: 'Rajesh Kumar (You)',
+      sellerRating: 4.9,
+      sellerLocation: sellLocation,
+      imageUrl: sellCategory === 'Harvested Crops'
+        ? 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=600&q=80'
+        : 'https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?auto=format&fit=crop&w=600&q=80',
+      description: sellDescription,
+      inStock: true,
+      allowBargain: true,
+      minAcceptablePrice: Math.round(sellPrice * 0.88),
+      tag: 'Government Certified',
+    };
+
+    setItems([newItem, ...items]);
+    setShowSellModal(false);
+    setOrderSuccessMsg(`Your listing "${sellTitle}" at ₹${sellPrice}/${sellUnit} is now LIVE on AgriVision Marketplace!`);
+    setTimeout(() => setOrderSuccessMsg(''), 5000);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-[var(--border-subtle)] bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-850 p-6 text-white shadow-lg relative overflow-hidden">
         <div className="space-y-1.5 z-10">
           <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200 backdrop-blur-xs">
-            <Tag className="h-3.5 w-3.5" /> Direct Farmer Agri Marketplace &amp; Bargain Hub
+            <Store className="h-3.5 w-3.5" /> 75+ Harvested Crops, Inputs &amp; Livestock Buy/Sell Hub
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Seeds, Protection &amp; Equipment Trading</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight">Direct Mandi Crop &amp; Agri Input Marketplace</h1>
           <p className="text-xs text-emerald-100/80 max-w-xl">
-            Buy certified seeds, bio-pesticides, solar machinery &amp; livestock at mandi wholesale rates. Use live bargaining to get best deals!
+            Buy &amp; sell harvested grains, vegetables, certified seeds, bio-pesticides, solar machinery &amp; animals. Use real-time bargaining!
           </p>
         </div>
 
-        {onOpenAssistant && (
+        <div className="flex items-center gap-3 z-10">
           <button
-            onClick={() => onOpenAssistant('What seeds and fertilizers are best for my farm soil this season?')}
-            className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-xs font-bold text-white backdrop-blur-xs border border-white/20 hover:bg-white/20 transition z-10"
+            onClick={() => setShowSellModal(true)}
+            className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-extrabold text-white shadow-md hover:bg-amber-600 transition"
           >
-            <Sparkles className="h-4 w-4 text-emerald-300" /> Ask AI Input Advisor
+            <Plus className="h-4 w-4" /> Sell My Crop / Input
           </button>
-        )}
+
+          {onOpenAssistant && (
+            <button
+              onClick={() => onOpenAssistant('What harvested crop mandi rates are highest right now?')}
+              className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-xs font-bold text-white backdrop-blur-xs border border-white/20 hover:bg-white/20 transition"
+            >
+              <Sparkles className="h-4 w-4 text-emerald-300" /> Mandi AI Rates
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Success Notification */}
@@ -163,12 +211,18 @@ export const Marketplace: React.FC<MarketplaceProps> = ({ onOpenAssistant }) => 
           <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-[var(--text-muted)]" />
           <input
             type="text"
-            placeholder="Search seeds, inputs, sellers..."
+            placeholder="Search 75+ crops, inputs, sellers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] pl-9 pr-3 py-2 text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
           />
         </div>
+      </div>
+
+      {/* Items Count Bar */}
+      <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-muted)]">
+        <span>Showing {filteredItems.length} verified listings</span>
+        <span>Filter: {selectedCategory}</span>
       </div>
 
       {/* Items Grid */}
@@ -379,6 +433,108 @@ export const Marketplace: React.FC<MarketplaceProps> = ({ onOpenAssistant }) => 
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── SELL CROP / PRODUCT MODAL ────────────────────────────────────── */}
+      {showSellModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+              <h2 className="text-base font-bold text-[var(--text-main)]">List Harvested Crop or Input for Sale</h2>
+              <button onClick={() => setShowSellModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text-main)]">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleListProductForSale} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-[var(--text-main)] mb-1">Product / Crop Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Harvested HD-2967 Sharbati Wheat, Organic Tomatoes..."
+                  value={sellTitle}
+                  onChange={(e) => setSellTitle(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3.5 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[var(--text-main)] mb-1">Category</label>
+                  <select
+                    value={sellCategory}
+                    onChange={(e) => setSellCategory(e.target.value as MarketCategory)}
+                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                  >
+                    <option value="Harvested Crops">Harvested Crops</option>
+                    <option value="Seeds">Seeds</option>
+                    <option value="Fertilizers">Fertilizers</option>
+                    <option value="Protection">Protection</option>
+                    <option value="Machinery">Machinery</option>
+                    <option value="Livestock">Livestock</option>
+                    <option value="Feed">Feed</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[var(--text-main)] mb-1">Price (₹)</label>
+                  <input
+                    type="number"
+                    value={sellPrice}
+                    onChange={(e) => setSellPrice(Number(e.target.value))}
+                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[var(--text-main)] mb-1">Unit</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Quintal (100kg), kg, bag"
+                    value={sellUnit}
+                    onChange={(e) => setSellUnit(e.target.value)}
+                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[var(--text-main)] mb-1">Mandi / Location</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Jaipur Mandi"
+                    value={sellLocation}
+                    onChange={(e) => setSellLocation(e.target.value)}
+                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] px-3 py-2.5 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[var(--text-main)] mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  value={sellDescription}
+                  onChange={(e) => setSellDescription(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-app)] p-3 text-xs text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-agri)]"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-amber-500 py-3 text-xs font-extrabold text-white shadow-md hover:bg-amber-600 transition"
+              >
+                Publish Listing to Marketplace
+              </button>
+            </form>
           </div>
         </div>
       )}

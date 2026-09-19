@@ -267,7 +267,7 @@ export interface AdminAnalytics {
   systemHealthPercent: number;
 }
 
-export type MarketCategory = 'Seeds' | 'Fertilizers' | 'Protection' | 'Machinery' | 'Livestock' | 'Feed';
+export type MarketCategory = 'Harvested Crops' | 'Seeds' | 'Fertilizers' | 'Protection' | 'Machinery' | 'Livestock' | 'Feed';
 
 export interface MarketplaceItem {
   id: string;
